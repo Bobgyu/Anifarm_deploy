@@ -124,7 +124,7 @@ sudo systemctl restart nginx
 # 애플리케이션 시작
 echo "Starting FastAPI application..."
 cd /var/www/fastapi-dp-test
-nohup /home/ubuntu/miniconda/envs/fastapi-env/bin/uvicorn app:app --reload --host 0.0.0.0 --port 8000 > /var/log/fastapi/uvicorn.log 2>&1 &
+nohup /home/ubuntu/miniconda/envs/fastapi-env/bin/uvicorn app:app --reload --host 0.0.0.0 --port 8000 --workers 3 > /var/log/fastapi/uvicorn.log 2>&1 &
 
 
 # 애플리케이션 시작 확인을 위한 대기
