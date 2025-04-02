@@ -2,13 +2,25 @@
 set -e  # 오류 발생시 스크립트 중단
 
 
-# 디스크 공간 정리 (기본적인 정리만 수행)
+# 디스크 공간 정리 강화
 echo "Cleaning up disk space..."
 sudo apt-get clean
 sudo apt-get autoremove -y
 sudo rm -rf /var/lib/apt/lists/*
 sudo rm -rf /tmp/*
 sudo rm -rf ~/.cache/pip
+sudo rm -rf /var/cache/pip
+sudo rm -rf /var/cache/apt
+sudo rm -rf /var/cache/apt/archives
+sudo rm -rf /var/cache/apt/archives/*
+sudo rm -rf /var/cache/apt/*.bin
+sudo rm -rf /var/cache/apt/partial/*
+sudo rm -rf /var/cache/apt/apt-file
+sudo rm -rf /var/cache/apt/apt-file/*
+sudo rm -rf /var/cache/apt/apt-file/partial/*
+sudo rm -rf /var/cache/apt/apt-file/archives/*
+sudo rm -rf /var/cache/apt/apt-file/archives/*/*
+sudo rm -rf /var/cache/apt/apt-file/archives/*/*/*
 
 
 # 기존 배포 파일 정리
@@ -123,7 +135,7 @@ sudo systemctl stop nginx || true
 sudo chown -R ubuntu:ubuntu /var/www/back
 
 
-# 의존성 설치
+# 의존성 설치 (pip 캐시 사용하지 않음)
 echo "Installing dependencies..."
 pip install --no-cache-dir -r requirements.txt
 
