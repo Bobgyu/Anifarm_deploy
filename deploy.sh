@@ -25,13 +25,10 @@ elif [ -f .env ]; then
     sudo chown ubuntu:ubuntu .env
     echo ".env file already exists"
 else
-    # .env 파일 생성 (필요한 환경 변수 설정)
-    cat << EOF > .env
-OPENAI_API_KEY=${OPENAI_API_KEY}
-TAVILY_API_KEY=${TAVILY_API_KEY}
-EOF
+    # GitHub Actions에서 전달받은 ENV_FILE 내용을 그대로 사용
+    echo "$ENV_FILE" > .env
     sudo chown ubuntu:ubuntu .env
-    echo "New .env file created"
+    echo "New .env file created from GitHub Actions secret"
 fi
 
 
