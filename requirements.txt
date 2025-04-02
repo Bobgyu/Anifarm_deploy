@@ -17,7 +17,6 @@ fastapi-mail
 httpx
 bcrypt
 langchain_openai
-langchain-community 
 beautifulsoup4
 newspaper3k
 lxml_html_clean

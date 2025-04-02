@@ -23,6 +23,13 @@ sudo rm -rf /var/cache/apt/apt-file/archives/*/*
 sudo rm -rf /var/cache/apt/apt-file/archives/*/*/*
 
 
+# 기존 conda 환경 및 캐시 정리
+echo "Cleaning up conda environments..."
+conda clean -a -y
+rm -rf ~/.conda/pkgs/*
+rm -rf ~/.conda/envs/*
+
+
 # 기존 배포 파일 정리
 echo "Cleaning up old deployments..."
 sudo rm -rf /var/www/back
