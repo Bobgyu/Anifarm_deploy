@@ -27,19 +27,13 @@ langchain-community
 langchain-openai 
 langgraph
 beautifulsoup4
-requests
 newspaper3k
 lxml_html_clean
 torch
 torchvision
-onnxruntime
-fastapi
-python-multipart
-uvicorn
 pillow
-requests
-numpy
 pydantic>=1.10.0 
 typing-extensions>=4.5.0 
+jieba>=0.42.1
 
 # python -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
