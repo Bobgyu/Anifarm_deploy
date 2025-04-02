@@ -1,19 +1,6 @@
 #!/bin/bash
 set -e  # 오류 발생시 스크립트 중단
 
-# Conda 환경 설정
-echo "Setting up conda environment..."
-if [ ! -d "/home/ubuntu/miniconda" ]; then
-    echo "Installing Miniconda..."
-    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh
-    bash /tmp/miniconda.sh -b -p /home/ubuntu/miniconda
-    rm /tmp/miniconda.sh
-fi
-
-# Conda 초기화
-export PATH="/home/ubuntu/miniconda/bin:$PATH"
-source /home/ubuntu/miniconda/bin/activate
-
 # 디스크 공간 정리 강화
 echo "Cleaning up disk space..."
 sudo apt-get clean
@@ -36,9 +23,12 @@ sudo rm -rf /var/cache/apt/apt-file/archives/*/*/*
 
 # 기존 conda 환경 및 캐시 정리
 echo "Cleaning up conda environments..."
-conda clean -a -y
-rm -rf ~/.conda/pkgs/*
-rm -rf ~/.conda/envs/*
+if [ -d "/home/ubuntu/miniconda" ]; then
+    export PATH="/home/ubuntu/miniconda/bin:$PATH"
+    conda clean -a -y
+    rm -rf ~/.conda/pkgs/*
+    rm -rf ~/.conda/envs/*
+fi
 
 # 기존 배포 파일 정리
 echo "Cleaning up old deployments..."
@@ -46,6 +36,19 @@ sudo rm -rf /var/www/back
 
 echo "Current disk space usage:"
 df -h
+
+# Conda 환경 설정
+echo "Setting up conda environment..."
+if [ ! -d "/home/ubuntu/miniconda" ]; then
+    echo "Installing Miniconda..."
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh
+    bash /tmp/miniconda.sh -b -p /home/ubuntu/miniconda
+    rm /tmp/miniconda.sh
+fi
+
+# Conda 초기화
+export PATH="/home/ubuntu/miniconda/bin:$PATH"
+source /home/ubuntu/miniconda/bin/activate
 
 echo "creating app folder"
 sudo mkdir -p /var/www/back

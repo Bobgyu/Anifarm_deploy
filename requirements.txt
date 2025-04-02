@@ -20,7 +20,7 @@ langchain_openai
 beautifulsoup4
 newspaper3k
 lxml_html_clean
-torch --index-url https://download.pytorch.org/whl/cpu
+torch --index-url https://download.pytorch.org/whl/cpu --no-deps
 pillow
 pydantic>=1.10.0 
 jieba>=0.42.1
