@@ -2,20 +2,34 @@
 set -e  # 오류 발생시 스크립트 중단
 
 
-echo "deleting old app"
-sudo rm -rf /var/www/fastapi-dp-test
+# 디스크 공간 정리 (기본적인 정리만 수행)
+echo "Cleaning up disk space..."
+sudo apt-get clean
+sudo apt-get autoremove -y
+sudo rm -rf /var/lib/apt/lists/*
+sudo rm -rf /tmp/*
+sudo rm -rf ~/.cache/pip
+
+
+# 기존 배포 파일 정리
+echo "Cleaning up old deployments..."
+sudo rm -rf /var/www/back
+
+
+echo "Current disk space usage:"
+df -h
 
 
 echo "creating app folder"
-sudo mkdir -p /var/www/fastapi-dp-test
+sudo mkdir -p /var/www/back
 
 
 echo "moving files to app folder"
-sudo cp -r * /var/www/fastapi-dp-test/
+sudo cp -r * /var/www/back/
 
 
 # Navigate to the app directory and handle .env file
-cd /var/www/fastapi-dp-test/
+cd /var/www/back/
 echo "Setting up .env file..."
 if [ -f env ]; then
     sudo mv env .env
@@ -24,11 +38,6 @@ if [ -f env ]; then
 elif [ -f .env ]; then
     sudo chown ubuntu:ubuntu .env
     echo ".env file already exists"
-else
-    # GitHub Actions에서 전달받은 ENV_FILE 내용을 그대로 사용
-    echo "$ENV_FILE" > .env
-    sudo chown ubuntu:ubuntu .env
-    echo "New .env file created from GitHub Actions secret"
 fi
 
 
@@ -42,26 +51,36 @@ else
 fi
 
 
-# 미니콘다 설치 (없는 경우)
+# Conda 환경 설정
+echo "Setting up conda environment..."
 if [ ! -d "/home/ubuntu/miniconda" ]; then
     echo "Installing Miniconda..."
     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh
-    sudo chown ubuntu:ubuntu /tmp/miniconda.sh
     bash /tmp/miniconda.sh -b -p /home/ubuntu/miniconda
     rm /tmp/miniconda.sh
 fi
 
 
-# PATH에 미니콘다 추가
-export PATH="/home/ubuntu/miniconda/bin:$PATH"
-source /home/ubuntu/miniconda/bin/activate
+# Conda 초기화
+eval "$(/home/ubuntu/miniconda/bin/conda shell.bash hook)"
+conda init bash
+source ~/.bashrc
 
-# Update and install Nginx if not already installed
+
+# 기존 환경 제거 및 새로운 환경 생성
+echo "Creating conda environment..."
+conda env remove -n fastapi-env --yes || true
+conda create -n fastapi-env python=3.12 -y
+conda activate fastapi-env || source activate fastapi-env
+
+
+# Nginx 설치 및 설정
 if ! command -v nginx > /dev/null; then
     echo "Installing Nginx"
     sudo apt-get update
     sudo apt-get install -y nginx
 fi
+
 
 # Nginx 설정
 echo "Configuring Nginx..."
@@ -101,18 +120,12 @@ sudo systemctl stop nginx || true
 
 
 # 애플리케이션 디렉토리 권한 설정
-sudo chown -R ubuntu:ubuntu /var/www/fastapi-dp-test
-
-
-# 콘다 환경 생성 및 활성화
-echo "Creating and activating conda environment..."
-/home/ubuntu/miniconda/bin/conda create -y -n fastapi-env python=3.10 || true
-source /home/ubuntu/miniconda/bin/activate fastapi-env
+sudo chown -R ubuntu:ubuntu /var/www/back
 
 
 # 의존성 설치
 echo "Installing dependencies..."
-pip install -r requirements.txt
+pip install --no-cache-dir -r requirements.txt
 
 
 # Nginx 설정 테스트 및 재시작
@@ -123,8 +136,8 @@ sudo systemctl restart nginx
 
 # 애플리케이션 시작
 echo "Starting FastAPI application..."
-cd /var/www/fastapi-dp-test
-nohup /home/ubuntu/miniconda/envs/fastapi-env/bin/uvicorn app:app --reload --host 0.0.0.0 --port 8000 --workers 3 > /var/log/fastapi/uvicorn.log 2>&1 &
+cd /var/www/back
+nohup /home/ubuntu/miniconda/envs/fastapi-env/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --workers 3 > /var/log/fastapi/uvicorn.log 2>&1 &
 
 
 # 애플리케이션 시작 확인을 위한 대기
@@ -143,5 +156,6 @@ echo "Deployment completed successfully! 🚀"
 echo "Checking service status..."
 ps aux | grep uvicorn
 sudo systemctl status nginx
+
 
 
