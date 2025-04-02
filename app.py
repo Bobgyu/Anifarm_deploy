@@ -59,7 +59,7 @@ app = FastAPI(
 app.openapi = lambda: custom_openapi(app)
 
 # Load environment variables
-load_dotenv()
+load_dotenv(override=True)  # override=True 추가
 
 # 도시 매핑 정의
 KOREAN_CITIES = {
