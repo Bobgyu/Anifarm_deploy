@@ -18,7 +18,7 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: yooingyu
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push Docker image
@@ -26,9 +26,14 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/anifarm:latest
-          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/anifarm:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/anifarm:buildcache,mode=max
+          tags: yooingyu/anifarm:latest
+          cache-from: type=registry,ref=yooingyu/anifarm:buildcache
+          cache-to: type=registry,ref=yooingyu/anifarm:buildcache,mode=max
+          build-args: |
+            DOCKERHUB_USERNAME=yooingyu
+
+      - name: Check Docker images
+        run: docker images
 
   deploy:
     needs: build-and-push
@@ -53,7 +58,7 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
           ENV_FILE: ${{ secrets.ENV_FILE }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_USERNAME: yooingyu
         run: |
           # EC2에 Docker와 Nginx 설치
           ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
