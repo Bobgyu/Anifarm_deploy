@@ -5,7 +5,7 @@ services:
     build: .
     container_name: app_deploy_web_1
     ports:
-      - "8001:8000"
+      - "8000:8000"
     env_file:
       - .env
     volumes:
