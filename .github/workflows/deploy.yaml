@@ -45,11 +45,16 @@ jobs:
             docker system prune -af --volumes || true
           '
 
-          # 애플리케이션 파일 전송
+          # 필요한 디렉토리 구조 생성
           ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
             rm -rf ~/app_deploy &&
-            mkdir -p ~/app_deploy
+            mkdir -p ~/app_deploy &&
+            mkdir -p ~/app_deploy/pricepython/models/carrot &&
+            mkdir -p ~/app_deploy/pricepython/models &&
+            mkdir -p ~/app_deploy/pricepython
           '
+
+          # 애플리케이션 파일 전송
           scp -i ~/.ssh/id_rsa -o ConnectTimeout=10 -r ./* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/app_deploy/
 
           # Docker 배포 실행

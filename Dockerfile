@@ -35,6 +35,9 @@ COPY --from=builder /app/wheels /wheels
 COPY --from=builder /app/requirements.txt .
 RUN pip install --no-cache /wheels/*
 
+# 필요한 디렉토리 구조 생성
+RUN mkdir -p /app/pricepython/models/carrot
+
 # 애플리케이션 코드 복사
 COPY . .
 
