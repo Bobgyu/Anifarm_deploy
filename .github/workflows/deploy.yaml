@@ -68,6 +68,15 @@ jobs:
         run: |
           # EC2에 Docker와 Nginx 설치
           ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
+            # 시스템 디스크 공간 확보
+            sudo apt-get clean
+            sudo apt-get autoremove -y
+            sudo rm -rf /var/lib/apt/lists/*
+            sudo journalctl --vacuum-time=2d
+            sudo rm -rf /var/log/*.gz
+            sudo rm -rf /var/cache/apt/archives/*
+            sudo rm -rf /var/cache/apt/lists/*
+            
             # Docker 설치
             if ! command -v docker &> /dev/null; then
               sudo apt-get update
@@ -107,6 +116,17 @@ jobs:
             sudo nginx -t && sudo systemctl restart nginx
           '
 
+          # Docker 디스크 공간 정리
+          ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
+            docker system prune -af --volumes || true
+            docker builder prune -f || true
+            docker image prune -af || true
+            docker container prune -f || true
+            docker volume prune -f || true
+            sudo rm -rf /var/lib/docker/overlay2/*
+            sudo rm -rf /var/lib/docker/tmp/*
+          '
+
           # 필요한 디렉토리 구조 생성
           ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
             rm -rf ~/app_deploy &&
@@ -126,6 +146,12 @@ jobs:
             sudo chown ubuntu:ubuntu .env &&
             docker-compose down || true &&
             docker system prune -af --volumes || true &&
+            docker builder prune -f || true &&
+            docker image prune -af || true &&
+            docker container prune -f || true &&
+            docker volume prune -f || true &&
+            sudo rm -rf /var/lib/docker/overlay2/* &&
+            sudo rm -rf /var/lib/docker/tmp/* &&
             docker-compose pull &&
             docker-compose up -d &&
             sleep 5 &&
