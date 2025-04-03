@@ -31,13 +31,40 @@ jobs:
           EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
           ENV_FILE: ${{ secrets.ENV_FILE }}
         run: |
-          # EC2에 Docker 설치 스크립트 전송
+          # EC2에 Docker와 Nginx 설치
           ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
+            # Docker 설치
             if ! command -v docker &> /dev/null; then
               sudo apt-get update
               sudo apt-get install -y docker.io docker-compose
               sudo usermod -aG docker ubuntu
             fi
+            
+            # Nginx 설치 및 설정
+            if ! command -v nginx &> /dev/null; then
+              sudo apt-get update
+              sudo apt-get install -y nginx
+            fi
+
+            # Nginx 설정
+            sudo bash -c "cat > /etc/nginx/sites-available/default << EOF
+            server {
+                listen 80;
+                server_name _;
+
+                location / {
+                    proxy_pass http://localhost:8000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade \$http_upgrade;
+                    proxy_set_header Connection \"upgrade\";
+                    proxy_set_header Host \$host;
+                    proxy_cache_bypass \$http_upgrade;
+                }
+            }
+            EOF"
+
+            # Nginx 설정 테스트 및 재시작
+            sudo nginx -t && sudo systemctl restart nginx
           '
 
           # Docker 디스크 공간 정리
