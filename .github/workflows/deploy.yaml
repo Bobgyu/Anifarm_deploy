@@ -187,6 +187,24 @@ jobs:
             sudo systemctl stop docker || true
             sudo systemctl stop docker.socket || true
             
+            # 디스크 공간 확보
+            sudo apt-get clean
+            sudo apt-get autoremove -y
+            sudo rm -rf /var/lib/apt/lists/*
+            sudo rm -rf /var/cache/apt/archives/*
+            sudo rm -rf /var/cache/apt/lists/*
+            sudo rm -rf /var/tmp/*
+            sudo rm -rf /tmp/*
+            sudo rm -rf /var/log/*.gz
+            sudo rm -rf /var/log/journal/*
+            sudo rm -rf /var/cache/*
+            sudo rm -rf /var/lib/docker/overlay2/*
+            sudo rm -rf /var/lib/docker/tmp/*
+            sudo rm -rf /var/lib/docker/containers/*
+            sudo rm -rf /var/lib/docker/volumes/*
+            sudo rm -rf /var/lib/docker/builder/*
+            sudo rm -rf /var/lib/docker/image/*
+            
             # Docker 디렉토리 생성 및 권한 설정
             sudo mkdir -p /var/lib/docker
             sudo mkdir -p /var/lib/docker/overlay2
@@ -199,6 +217,11 @@ jobs:
             sudo chown -R root:root /var/lib/docker
             sudo chmod -R 711 /var/lib/docker
             
+            # 디스크 공간 확인
+            df -h
+            sudo du -sh /var/lib/docker/* || true
+            
+            # Docker 서비스 재시작
             sudo systemctl start docker
             
             # Docker 시스템 정리
@@ -208,9 +231,8 @@ jobs:
             sudo docker container prune -f || true
             sudo docker volume prune -f || true
             
-            # 디스크 공간 확인
+            # 디스크 공간 재확인
             df -h
-            sudo du -sh /var/lib/docker/* || true
             
             # 이미지 가져오기 및 실행
             sudo docker-compose pull &&
