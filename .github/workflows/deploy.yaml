@@ -20,6 +20,12 @@ jobs:
         with:
           username: yooingyu
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: docker.io
+
+      - name: Debug Docker login
+        run: |
+          docker info
+          docker login -u yooingyu -p ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
