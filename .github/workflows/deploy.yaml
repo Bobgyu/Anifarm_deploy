@@ -40,6 +40,11 @@ jobs:
             fi
           '
 
+          # Docker 디스크 공간 정리
+          ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
+            docker system prune -af --volumes || true
+          '
+
           # 애플리케이션 파일 전송
           ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
             rm -rf ~/app_deploy &&
@@ -53,6 +58,7 @@ jobs:
             echo "$ENV_FILE" > .env &&
             sudo chown ubuntu:ubuntu .env &&
             docker-compose down || true &&
+            docker system prune -af --volumes || true &&
             docker-compose build --no-cache &&
             docker-compose up -d
           '
