@@ -122,14 +122,19 @@ jobs:
           ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
             # Docker 서비스 중지
             sudo systemctl stop docker || true
+            sudo systemctl stop docker.socket || true
             
-            # Docker 관련 파일 정리
-            sudo rm -rf /var/lib/docker/overlay2/*
-            sudo rm -rf /var/lib/docker/tmp/*
-            sudo rm -rf /var/lib/docker/containers/*
-            sudo rm -rf /var/lib/docker/volumes/*
-            sudo rm -rf /var/lib/docker/builder/*
-            sudo rm -rf /var/lib/docker/image/*
+            # Docker 디렉토리 생성 및 권한 설정
+            sudo mkdir -p /var/lib/docker
+            sudo mkdir -p /var/lib/docker/overlay2
+            sudo mkdir -p /var/lib/docker/tmp
+            sudo mkdir -p /var/lib/docker/containers
+            sudo mkdir -p /var/lib/docker/volumes
+            sudo mkdir -p /var/lib/docker/builder
+            sudo mkdir -p /var/lib/docker/image
+            
+            sudo chown -R root:root /var/lib/docker
+            sudo chmod -R 711 /var/lib/docker
             
             # Docker 서비스 재시작
             sudo systemctl start docker
@@ -143,7 +148,7 @@ jobs:
             
             # 디스크 공간 확인
             df -h
-            sudo du -sh /var/lib/docker/*
+            sudo du -sh /var/lib/docker/* || true
           '
 
           # 필요한 디렉토리 구조 생성
@@ -167,12 +172,20 @@ jobs:
             
             # Docker 서비스 중지 및 정리
             sudo systemctl stop docker || true
-            sudo rm -rf /var/lib/docker/overlay2/*
-            sudo rm -rf /var/lib/docker/tmp/*
-            sudo rm -rf /var/lib/docker/containers/*
-            sudo rm -rf /var/lib/docker/volumes/*
-            sudo rm -rf /var/lib/docker/builder/*
-            sudo rm -rf /var/lib/docker/image/*
+            sudo systemctl stop docker.socket || true
+            
+            # Docker 디렉토리 생성 및 권한 설정
+            sudo mkdir -p /var/lib/docker
+            sudo mkdir -p /var/lib/docker/overlay2
+            sudo mkdir -p /var/lib/docker/tmp
+            sudo mkdir -p /var/lib/docker/containers
+            sudo mkdir -p /var/lib/docker/volumes
+            sudo mkdir -p /var/lib/docker/builder
+            sudo mkdir -p /var/lib/docker/image
+            
+            sudo chown -R root:root /var/lib/docker
+            sudo chmod -R 711 /var/lib/docker
+            
             sudo systemctl start docker
             
             # Docker 시스템 정리
@@ -184,7 +197,7 @@ jobs:
             
             # 디스크 공간 확인
             df -h
-            sudo du -sh /var/lib/docker/*
+            sudo du -sh /var/lib/docker/* || true
             
             # 이미지 가져오기 및 실행
             sudo docker-compose pull &&
