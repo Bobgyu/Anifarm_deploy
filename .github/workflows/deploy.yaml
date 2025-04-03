@@ -135,15 +135,15 @@ jobs:
             sudo systemctl start docker
             
             # Docker 시스템 정리
-            docker system prune -af --volumes || true
-            docker builder prune -f || true
-            docker image prune -af || true
-            docker container prune -f || true
-            docker volume prune -f || true
+            sudo docker system prune -af --volumes || true
+            sudo docker builder prune -f || true
+            sudo docker image prune -af || true
+            sudo docker container prune -f || true
+            sudo docker volume prune -f || true
             
             # 디스크 공간 확인
             df -h
-            du -sh /var/lib/docker/*
+            sudo du -sh /var/lib/docker/*
           '
 
           # 필요한 디렉토리 구조 생성
@@ -163,7 +163,7 @@ jobs:
             cd ~/app_deploy &&
             echo "$ENV_FILE" > .env &&
             sudo chown ubuntu:ubuntu .env &&
-            docker-compose down || true &&
+            sudo docker-compose down || true &&
             
             # Docker 서비스 중지 및 정리
             sudo systemctl stop docker || true
@@ -176,21 +176,21 @@ jobs:
             sudo systemctl start docker
             
             # Docker 시스템 정리
-            docker system prune -af --volumes || true
-            docker builder prune -f || true
-            docker image prune -af || true
-            docker container prune -f || true
-            docker volume prune -f || true
+            sudo docker system prune -af --volumes || true
+            sudo docker builder prune -f || true
+            sudo docker image prune -af || true
+            sudo docker container prune -f || true
+            sudo docker volume prune -f || true
             
             # 디스크 공간 확인
             df -h
-            du -sh /var/lib/docker/*
+            sudo du -sh /var/lib/docker/*
             
             # 이미지 가져오기 및 실행
-            docker-compose pull &&
-            docker-compose up -d &&
+            sudo docker-compose pull &&
+            sudo docker-compose up -d &&
             sleep 5 &&
-            docker logs app_deploy_web_1
+            sudo docker logs app_deploy_web_1
           '
 
 
