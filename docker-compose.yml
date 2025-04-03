@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   app_deploy_web:
-    build: .
+    image: ${DOCKERHUB_USERNAME}/anifarm:latest
     container_name: app_deploy_web_1
     ports:
       - "8001:8000"
