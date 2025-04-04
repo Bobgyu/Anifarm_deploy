@@ -36,8 +36,27 @@ jobs:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
-          # EC2에 접속하여 디스크 공간 확보
+          # EC2에 접속하여 Docker 설치 및 설정
           ssh -i ~/.ssh/id_rsa -o ConnectTimeout=30 -o ServerAliveInterval=60 -o ServerAliveCountMax=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
+            # Docker 설치
+            sudo apt-get update
+            sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+            sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+            sudo apt-get update
+            sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+            
+            # Docker Compose 설치
+            sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+            sudo chmod +x /usr/local/bin/docker-compose
+            
+            # Docker 서비스 시작 및 자동 시작 설정
+            sudo systemctl start docker
+            sudo systemctl enable docker
+            
+            # 현재 사용자를 docker 그룹에 추가
+            sudo usermod -aG docker $USER
+            
             # 디스크 공간 확인
             df -h
             
