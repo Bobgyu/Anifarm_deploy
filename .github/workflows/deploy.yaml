@@ -49,11 +49,33 @@ jobs:
             sudo chown -R root:root /var/lib/docker
             sudo chmod -R 711 /var/lib/docker
             
+            # 스왑 파일 생성 및 활성화
+            if [ ! -f /swapfile ]; then
+              sudo fallocate -l 8G /swapfile
+              sudo chmod 600 /swapfile
+              sudo mkswap /swapfile
+              sudo swapon /swapfile
+              echo "/swapfile none swap sw 0 0" | sudo tee -a /etc/fstab
+            fi
+            
+            # 시스템 정리
+            sudo apt-get clean
+            sudo apt-get autoremove -y
+            sudo rm -rf /var/lib/apt/lists/*
+            sudo rm -rf /var/cache/apt/archives/*
+            sudo rm -rf /var/cache/apt/lists/*
+            sudo rm -rf /var/tmp/*
+            sudo rm -rf /tmp/*
+            sudo rm -rf /var/log/*.gz
+            sudo rm -rf /var/log/journal/*
+            sudo rm -rf /var/cache/*
+            
             # Docker 서비스 재시작
             sudo systemctl start docker
             
             # 디스크 공간 확인
             df -h
+            free -h
           '
 
           # 애플리케이션 코드 전송
@@ -67,8 +89,8 @@ jobs:
             echo "$ENV_FILE" > .env
             sudo chown ubuntu:ubuntu .env
             
-            # Docker 이미지 빌드
-            sudo docker build -t anifarm_deploy_web .
+            # Docker 이미지 빌드 (단계별로 진행)
+            sudo docker build --no-cache --progress=plain -t anifarm_deploy_web .
             
             # 기존 컨테이너 중지 및 삭제
             sudo docker stop $(sudo docker ps -a -q) || true
