@@ -38,6 +38,9 @@ jobs:
         run: |
           # EC2에 접속하여 디스크 공간 확보
           ssh -i ~/.ssh/id_rsa -o ConnectTimeout=30 -o ServerAliveInterval=60 -o ServerAliveCountMax=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
+            # 디스크 공간 확인
+            df -h
+            
             # Docker 서비스 중지
             sudo systemctl stop docker || true
             sudo systemctl stop docker.socket || true
@@ -78,6 +81,9 @@ jobs:
             sudo docker rm $(sudo docker ps -aq) 2>/dev/null || true
             sudo docker rmi yooingyu/anifarm:latest 2>/dev/null || true
             
+            # 작업 디렉토리로 이동
+            cd ~/app_deploy/back
+            
             # Docker 이미지 가져오기
             sudo docker pull --platform linux/amd64 yooingyu/anifarm:latest
             
@@ -87,8 +93,11 @@ jobs:
             sudo chmod 600 .env
             
             # 컨테이너 실행
-            sudo docker-compose up -d
+            sudo docker-compose -f docker-compose.yml up -d
             
             # 컨테이너 로그 확인
             sudo docker logs anifarm_deploy_web
+            
+            # 디스크 공간 확인
+            df -h
           '
