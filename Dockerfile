@@ -33,37 +33,7 @@ RUN apt-get update && apt-get install -y \
 # wheels 복사 및 설치
 COPY --from=builder /app/wheels /wheels
 COPY --from=builder /app/requirements.txt .
-
-# 필요한 패키지만 선택적으로 설치
-RUN pip install --no-cache /wheels/fastapi-*.whl \
-    /wheels/uvicorn-*.whl \
-    /wheels/python-dotenv-*.whl \
-    /wheels/pydantic-*.whl \
-    /wheels/httpx-*.whl \
-    /wheels/requests-*.whl \
-    /wheels/beautifulsoup4-*.whl \
-    /wheels/lxml-html-clean-*.whl \
-    /wheels/sqlalchemy-*.whl \
-    /wheels/psycopg2_binary-*.whl \
-    /wheels/python-jose-*.whl \
-    /wheels/passlib-*.whl \
-    /wheels/bcrypt-*.whl \
-    /wheels/python-multipart-*.whl \
-    /wheels/email-validator-*.whl \
-    /wheels/PyJWT-*.whl \
-    /wheels/numpy-*.whl \
-    /wheels/pandas-*.whl \
-    /wheels/jieba-*.whl \
-    /wheels/langchain-openai-*.whl \
-    /wheels/langchain-community-*.whl \
-    /wheels/tiktoken-*.whl \
-    /wheels/torch-*.whl \
-    /wheels/torchvision-*.whl \
-    /wheels/torchaudio-*.whl \
-    /wheels/onnxruntime-*.whl \
-    /wheels/tensorflow-*.whl \
-    /wheels/python-dateutil-*.whl \
-    /wheels/Pillow-*.whl
+RUN pip install --no-cache-dir /wheels/*
 
 # 필요한 디렉토리 구조 생성
 RUN mkdir -p /app/pricepython/models/carrot
