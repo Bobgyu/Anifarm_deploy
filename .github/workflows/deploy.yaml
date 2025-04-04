@@ -89,12 +89,13 @@ jobs:
             echo "$ENV_FILE" > .env
             sudo chown ubuntu:ubuntu .env
             
-            # Docker 이미지 빌드 (단계별로 진행)
-            sudo docker build --no-cache --progress=plain -t anifarm_deploy_web .
+            # 기존 컨테이너와 이미지 정리
+            sudo docker stop $(sudo docker ps -aq) 2>/dev/null || true
+            sudo docker rm $(sudo docker ps -aq) 2>/dev/null || true
+            sudo docker rmi anifarm_deploy_web 2>/dev/null || true
             
-            # 기존 컨테이너 중지 및 삭제
-            sudo docker stop $(sudo docker ps -a -q) || true
-            sudo docker rm $(sudo docker ps -a -q) || true
+            # Docker 이미지 빌드
+            sudo docker build --no-cache -t anifarm_deploy_web .
             
             # 컨테이너 실행
             sudo docker run -d \
