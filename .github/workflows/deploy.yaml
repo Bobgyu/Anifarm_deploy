@@ -35,6 +35,31 @@ jobs:
           ENV_FILE: ${{ secrets.ENV_FILE }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          EMAIL: ${{ secrets.EMAIL }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
+          KMA_API_KEY: ${{ secrets.KMA_API_KEY }}
+          KAMIS_API_KEY: ${{ secrets.KAMIS_API_KEY }}
+          DATAENCODING_API_KEY: ${{ secrets.DATAENCODING_API_KEY }}
+          DATADECODING_API_KEY: ${{ secrets.DATADECODING_API_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          MAIL_PORT: ${{ secrets.MAIL_PORT }}
+          MAIL_SERVER: ${{ secrets.MAIL_SERVER }}
+          YOUNG_API_KEY: ${{ secrets.YOUNG_API_KEY }}
+          INFOMATION_API_KEY: ${{ secrets.INFOMATION_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
         run: |
           # EC2에 접속하여 Docker 설치 및 설정
           ssh -i ~/.ssh/id_rsa -o ConnectTimeout=30 -o ServerAliveInterval=60 -o ServerAliveCountMax=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
@@ -103,13 +128,13 @@ jobs:
             # 작업 디렉토리로 이동
             cd ~/app_deploy/back
             
-            # Docker 이미지 가져오기
-            sudo docker pull --platform linux/amd64 yooingyu/anifarm:latest
-            
             # 환경 변수 파일 생성 및 권한 설정
             echo "$ENV_FILE" > .env
             sudo chown ubuntu:ubuntu .env
             sudo chmod 600 .env
+            
+            # Docker 이미지 가져오기
+            sudo docker pull --platform linux/amd64 yooingyu/anifarm:latest
             
             # 컨테이너 실행
             sudo docker-compose -f docker-compose.yml up -d
