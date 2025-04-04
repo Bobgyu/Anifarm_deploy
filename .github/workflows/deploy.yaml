@@ -7,42 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: yooingyu
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          registry: docker.io
-
-      - name: Debug Docker login
-        run: |
-          docker info
-          docker login -u yooingyu -p ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          tags: yooingyu/anifarm:latest
-          cache-from: type=registry,ref=yooingyu/anifarm:buildcache
-          cache-to: type=registry,ref=yooingyu/anifarm:buildcache,mode=max
-          build-args: |
-            DOCKERHUB_USERNAME=yooingyu
-
-      - name: Check Docker images
-        run: docker images
-
   deploy:
-    needs: build-and-push
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -68,217 +33,56 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
           ENV_FILE: ${{ secrets.ENV_FILE }}
-          DOCKERHUB_USERNAME: yooingyu
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
         run: |
-          # EC2에 Docker와 Nginx 설치
-          ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
-            # AWS CLI 설치
-            if ! command -v aws &> /dev/null; then
-              sudo apt-get update
-              sudo apt-get install -y awscli
-            fi
-            
-            # AWS 자격 증명 설정
-            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-            aws configure set default.region $AWS_DEFAULT_REGION
-            
-            # 시스템 디스크 공간 확보
-            sudo apt-get clean
-            sudo apt-get autoremove -y
-            sudo rm -rf /var/lib/apt/lists/*
-            sudo journalctl --vacuum-time=2d
-            sudo rm -rf /var/log/*.gz
-            sudo rm -rf /var/cache/apt/archives/*
-            sudo rm -rf /var/cache/apt/lists/*
-            sudo rm -rf /var/tmp/*
-            sudo rm -rf /tmp/*
-            
-            # 스왑 파일 생성 및 활성화
-            if [ ! -f /swapfile ]; then
-              sudo fallocate -l 4G /swapfile
-              sudo chmod 600 /swapfile
-              sudo mkswap /swapfile
-              sudo swapon /swapfile
-              echo "/swapfile none swap sw 0 0" | sudo tee -a /etc/fstab
-            fi
-            
-            # 스왑 상태 확인
-            free -h
-            swapon --show
-            
-            # EBS 볼륨 크기 확인 및 확장
-            INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
-            VOLUME_ID=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[0].Instances[0].BlockDeviceMappings[0].Ebs.VolumeId" --output text)
-            CURRENT_SIZE=$(aws ec2 describe-volumes --volume-ids $VOLUME_ID --query "Volumes[0].Size" --output text)
-            
-            if [ "$CURRENT_SIZE" -lt "20" ]; then
-              # 볼륨 크기를 20GB로 확장
-              aws ec2 modify-volume --volume-id $VOLUME_ID --size 20
-              
-              # 볼륨 확장이 완료될 때까지 대기
-              while [ "$(aws ec2 describe-volumes --volume-ids $VOLUME_ID --query "Volumes[0].State" --output text)" != "completed" ]; do
-                sleep 5
-              done
-              
-              # 파일 시스템 확장
-              sudo growpart /dev/xvda 1
-              sudo resize2fs /dev/xvda1
-            fi
-            
-            # 디스크 공간 확인
-            df -h
-            
-            # Docker 설치
-            if ! command -v docker &> /dev/null; then
-              sudo apt-get update
-              sudo apt-get install -y docker.io docker-compose
-              sudo usermod -aG docker ubuntu
-            fi
-            
-            # Nginx 설치 및 설정
-            if ! command -v nginx &> /dev/null; then
-              sudo apt-get update
-              sudo apt-get install -y nginx
-            fi
-
-            # Nginx 설정
-            sudo tee /etc/nginx/sites-available/default > /dev/null << "EOL"
-            server {
-                listen 80;
-                server_name _;
-
-                location / {
-                    proxy_pass http://127.0.0.1:8000;
-                    proxy_http_version 1.1;
-                    proxy_set_header Upgrade $http_upgrade;
-                    proxy_set_header Connection "upgrade";
-                    proxy_set_header Host $host;
-                    proxy_set_header X-Real-IP $remote_addr;
-                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto $scheme;
-                    proxy_read_timeout 300;
-                    proxy_connect_timeout 300;
-                    proxy_send_timeout 300;
-                }
-            }
-            EOL
-
-            # Nginx 설정 테스트 및 재시작
-            sudo nginx -t && sudo systemctl restart nginx
-          '
-
-          # Docker 디스크 공간 정리
+          # EC2에 접속하여 디스크 공간 확보
           ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
             # Docker 서비스 중지
             sudo systemctl stop docker || true
             sudo systemctl stop docker.socket || true
             
-            # Docker 디렉토리 생성 및 권한 설정
+            # Docker 디렉토리 삭제 및 재생성
+            sudo rm -rf /var/lib/docker
             sudo mkdir -p /var/lib/docker
-            sudo mkdir -p /var/lib/docker/overlay2
-            sudo mkdir -p /var/lib/docker/tmp
-            sudo mkdir -p /var/lib/docker/containers
-            sudo mkdir -p /var/lib/docker/volumes
-            sudo mkdir -p /var/lib/docker/builder
-            sudo mkdir -p /var/lib/docker/image
-            
             sudo chown -R root:root /var/lib/docker
             sudo chmod -R 711 /var/lib/docker
             
             # Docker 서비스 재시작
             sudo systemctl start docker
             
-            # Docker 시스템 정리
-            sudo docker system prune -af --volumes || true
-            sudo docker builder prune -f || true
-            sudo docker image prune -af || true
-            sudo docker container prune -f || true
-            sudo docker volume prune -f || true
-            
             # 디스크 공간 확인
             df -h
-            sudo du -sh /var/lib/docker/* || true
           '
 
-          # 필요한 디렉토리 구조 생성
-          ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
-            rm -rf ~/app_deploy &&
-            mkdir -p ~/app_deploy &&
-            mkdir -p ~/app_deploy/pricepython/models/carrot &&
-            mkdir -p ~/app_deploy/pricepython/models &&
-            mkdir -p ~/app_deploy/pricepython
-          '
+          # 애플리케이션 코드 전송
+          scp -i ~/.ssh/id_rsa -o ConnectTimeout=10 -r . ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/app_deploy/
 
-          # docker-compose.yml 파일 전송
-          scp -i ~/.ssh/id_rsa -o ConnectTimeout=10 docker-compose.yml ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/app_deploy/
-
-          # Docker 배포 실행
+          # EC2에서 Docker 이미지 빌드 및 실행
           ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
-            cd ~/app_deploy &&
-            echo "$ENV_FILE" > .env &&
-            sudo chown ubuntu:ubuntu .env &&
-            sudo docker-compose down || true &&
+            cd ~/app_deploy
             
-            # Docker 서비스 중지 및 정리
-            sudo systemctl stop docker || true
-            sudo systemctl stop docker.socket || true
+            # 환경 변수 파일 생성
+            echo "$ENV_FILE" > .env
+            sudo chown ubuntu:ubuntu .env
             
-            # 디스크 공간 확보
-            sudo apt-get clean
-            sudo apt-get autoremove -y
-            sudo rm -rf /var/lib/apt/lists/*
-            sudo rm -rf /var/cache/apt/archives/*
-            sudo rm -rf /var/cache/apt/lists/*
-            sudo rm -rf /var/tmp/*
-            sudo rm -rf /tmp/*
-            sudo rm -rf /var/log/*.gz
-            sudo rm -rf /var/log/journal/*
-            sudo rm -rf /var/cache/*
-            sudo rm -rf /var/lib/docker/overlay2/*
-            sudo rm -rf /var/lib/docker/tmp/*
-            sudo rm -rf /var/lib/docker/containers/*
-            sudo rm -rf /var/lib/docker/volumes/*
-            sudo rm -rf /var/lib/docker/builder/*
-            sudo rm -rf /var/lib/docker/image/*
+            # Docker 이미지 빌드
+            sudo docker build -t anifarm_deploy_web .
             
-            # Docker 디렉토리 생성 및 권한 설정
-            sudo mkdir -p /var/lib/docker
-            sudo mkdir -p /var/lib/docker/overlay2
-            sudo mkdir -p /var/lib/docker/tmp
-            sudo mkdir -p /var/lib/docker/containers
-            sudo mkdir -p /var/lib/docker/volumes
-            sudo mkdir -p /var/lib/docker/builder
-            sudo mkdir -p /var/lib/docker/image
+            # 기존 컨테이너 중지 및 삭제
+            sudo docker stop $(sudo docker ps -a -q) || true
+            sudo docker rm $(sudo docker ps -a -q) || true
             
-            sudo chown -R root:root /var/lib/docker
-            sudo chmod -R 711 /var/lib/docker
+            # 컨테이너 실행
+            sudo docker run -d \
+              --name anifarm_deploy_web \
+              -p 8000:8000 \
+              -v $(pwd)/.env:/app/.env \
+              anifarm_deploy_web
             
-            # 디스크 공간 확인
-            df -h
-            sudo du -sh /var/lib/docker/* || true
-            
-            # Docker 서비스 재시작
-            sudo systemctl start docker
-            
-            # Docker 시스템 정리
-            sudo docker system prune -af --volumes || true
-            sudo docker builder prune -f || true
-            sudo docker image prune -af || true
-            sudo docker container prune -f || true
-            sudo docker volume prune -f || true
-            
-            # 디스크 공간 재확인
-            df -h
-            
-            # 이미지 가져오기 및 실행
-            sudo docker-compose pull &&
-            sudo docker-compose up -d &&
-            sleep 5 &&
-            sudo docker logs app_deploy_web_1
+            # 컨테이너 로그 확인
+            sudo docker logs anifarm_deploy_web
           '
 
 

@@ -2,10 +2,10 @@ version: '3.8'
 
 services:
   app_deploy_web:
-    image: yooingyu/anifarm:latest
-    container_name: app_deploy_web_1
+    image: anifarm_deploy_web
+    container_name: anifarm_deploy_web
     ports:
-      - "8001:8000"
+      - "8000:8000"
     env_file:
       - .env
     volumes:
