@@ -42,20 +42,18 @@ jobs:
             sudo systemctl stop docker || true
             sudo systemctl stop docker.socket || true
             
+            # Docker 관련 모든 데이터 정리
+            sudo docker system prune -a --volumes --force
+            
             # Docker 디렉토리 삭제 및 재생성
             sudo rm -rf /var/lib/docker
             sudo mkdir -p /var/lib/docker
             sudo chown -R root:root /var/lib/docker
             sudo chmod -R 711 /var/lib/docker
             
-            # 스왑 파일 생성 및 활성화
-            if [ ! -f /swapfile ]; then
-              sudo fallocate -l 16G /swapfile
-              sudo chmod 600 /swapfile
-              sudo mkswap /swapfile
-              sudo swapon /swapfile
-              echo "/swapfile none swap sw 0 0" | sudo tee -a /etc/fstab
-            fi
+            # 스왑 파일 비활성화 및 제거
+            sudo swapoff /swapfile 2>/dev/null || true
+            sudo rm -f /swapfile
             
             # 시스템 정리
             sudo apt-get clean
@@ -80,8 +78,8 @@ jobs:
             sudo docker rm $(sudo docker ps -aq) 2>/dev/null || true
             sudo docker rmi yooingyu/anifarm:latest 2>/dev/null || true
             
-            # Docker 이미지 가져오기
-            sudo docker pull yooingyu/anifarm:latest
+            # Docker 이미지 가져오기 (레이어별로 가져오기)
+            sudo docker pull --platform linux/amd64 yooingyu/anifarm:latest
             
             # 환경 변수 파일 생성
             echo "$ENV_FILE" > .env
