@@ -33,13 +33,25 @@ RUN pip install --no-cache-dir /wheels/* && \
     rm -rf /wheels
 
 # 필요한 디렉토리 구조 생성
-RUN mkdir -p /app/pricepython/models/carrot
+RUN mkdir -p /app/models && \
+    mkdir -p /app/pricepython/models/carrot
+
+# 모델 파일들을 복사할 디렉토리 생성
+RUN mkdir -p /app/models/plant && \
+    mkdir -p /app/models/strawberry && \
+    mkdir -p /app/models/apple && \
+    mkdir -p /app/models/tomato && \
+    mkdir -p /app/models/grape && \
+    mkdir -p /app/models/corn
 
 # 애플리케이션 코드 복사
 COPY . .
 
 # 환경 변수 설정
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONUNBUFFERED=1 \
+    TF_CPP_MIN_LOG_LEVEL=2 \
+    TF_ENABLE_ONEDNN_OPTS=0 \
+    CUDA_VISIBLE_DEVICES=-1
 
 # 포트 설정
 EXPOSE 8000

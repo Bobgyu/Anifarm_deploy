@@ -78,19 +78,16 @@ jobs:
             sudo docker rm $(sudo docker ps -aq) 2>/dev/null || true
             sudo docker rmi yooingyu/anifarm:latest 2>/dev/null || true
             
-            # Docker 이미지 가져오기 (레이어별로 가져오기)
+            # Docker 이미지 가져오기
             sudo docker pull --platform linux/amd64 yooingyu/anifarm:latest
             
-            # 환경 변수 파일 생성
+            # 환경 변수 파일 생성 및 권한 설정
             echo "$ENV_FILE" > .env
             sudo chown ubuntu:ubuntu .env
+            sudo chmod 600 .env
             
             # 컨테이너 실행
-            sudo docker run -d \
-              --name anifarm_deploy_web \
-              -p 8000:8000 \
-              -v $(pwd)/.env:/app/.env \
-              yooingyu/anifarm:latest
+            sudo docker-compose up -d
             
             # 컨테이너 로그 확인
             sudo docker logs anifarm_deploy_web

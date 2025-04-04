@@ -1,20 +1,36 @@
 version: '3.8'
 
 services:
-  app_deploy_web:
-    image: yooingyu/anifarm:latest
-    container_name: anifarm_deploy_web
+  web:
+    build: .
     ports:
       - "8000:8000"
     env_file:
       - .env
+    depends_on:
+      - db
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    networks:
+      - app-network
+
+  db:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${DB_NAME}
     volumes:
-      - .env:/app/.env:ro
-    restart: always
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - app-network
 
 networks:
   app-network:
-    name: app-network
     driver: bridge
+
+volumes:
+  postgres_data:

@@ -121,14 +121,28 @@ class ImageClassifier:
     def _load_plant_model(self):
         try:
             url = "https://huggingface.co/jjiw/plant-classifier-h5/resolve/main/model.h5"
+            logger.info(f"식물 분류 모델 다운로드 시도: {url}")
             response = requests.get(url)
+            
+            if response.status_code != 200:
+                raise ValueError(f"모델 다운로드 실패: HTTP {response.status_code}")
+                
             model_bytes = io.BytesIO(response.content)
             temp_model_path = "temp_model.h5"
             with open(temp_model_path, "wb") as f:
                 f.write(model_bytes.getvalue())
-            model = tf.keras.models.load_model(temp_model_path)
-            os.remove(temp_model_path)
-            return model
+            
+            try:
+                model = tf.keras.models.load_model(temp_model_path)
+                logger.info("식물 분류 모델 로드 성공")
+                return model
+            finally:
+                if os.path.exists(temp_model_path):
+                    os.remove(temp_model_path)
+                    
+        except requests.exceptions.RequestException as e:
+            logger.error(f"식물 분류 모델 다운로드 실패: {str(e)}")
+            return None
         except Exception as e:
             logger.error(f"식물 분류 모델 로드 실패: {str(e)}")
             return None
@@ -136,14 +150,28 @@ class ImageClassifier:
     def _load_strawberry_model(self):
         try:
             url = "https://huggingface.co/ro981009/strawberry-classifier-h5/resolve/main/model.h5"
+            logger.info(f"딸기 모델 다운로드 시도: {url}")
             response = requests.get(url)
+            
+            if response.status_code != 200:
+                raise ValueError(f"모델 다운로드 실패: HTTP {response.status_code}")
+                
             model_bytes = io.BytesIO(response.content)
             temp_model_path = "strawberry_model.h5"
             with open(temp_model_path, "wb") as f:
                 f.write(model_bytes.getvalue())
-            model = tf.keras.models.load_model(temp_model_path)
-            os.remove(temp_model_path)
-            return model
+            
+            try:
+                model = tf.keras.models.load_model(temp_model_path)
+                logger.info("딸기 모델 로드 성공")
+                return model
+            finally:
+                if os.path.exists(temp_model_path):
+                    os.remove(temp_model_path)
+                    
+        except requests.exceptions.RequestException as e:
+            logger.error(f"딸기 모델 다운로드 실패: {str(e)}")
+            return None
         except Exception as e:
             logger.error(f"딸기 모델 로드 실패: {str(e)}")
             return None
