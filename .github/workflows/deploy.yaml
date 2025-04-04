@@ -65,9 +65,23 @@ jobs:
           EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
           ENV_FILE: ${{ secrets.ENV_FILE }}
           DOCKERHUB_USERNAME: yooingyu
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
         run: |
           # EC2에 Docker와 Nginx 설치
           ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
+            # AWS CLI 설치
+            if ! command -v aws &> /dev/null; then
+              sudo apt-get update
+              sudo apt-get install -y awscli
+            fi
+            
+            # AWS 자격 증명 설정
+            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+            aws configure set default.region $AWS_DEFAULT_REGION
+            
             # 시스템 디스크 공간 확보
             sudo apt-get clean
             sudo apt-get autoremove -y
@@ -91,6 +105,28 @@ jobs:
             # 스왑 상태 확인
             free -h
             swapon --show
+            
+            # EBS 볼륨 크기 확인 및 확장
+            INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+            VOLUME_ID=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[0].Instances[0].BlockDeviceMappings[0].Ebs.VolumeId" --output text)
+            CURRENT_SIZE=$(aws ec2 describe-volumes --volume-ids $VOLUME_ID --query "Volumes[0].Size" --output text)
+            
+            if [ "$CURRENT_SIZE" -lt "20" ]; then
+              # 볼륨 크기를 20GB로 확장
+              aws ec2 modify-volume --volume-id $VOLUME_ID --size 20
+              
+              # 볼륨 확장이 완료될 때까지 대기
+              while [ "$(aws ec2 describe-volumes --volume-ids $VOLUME_ID --query "Volumes[0].State" --output text)" != "completed" ]; do
+                sleep 5
+              done
+              
+              # 파일 시스템 확장
+              sudo growpart /dev/xvda 1
+              sudo resize2fs /dev/xvda1
+            fi
+            
+            # 디스크 공간 확인
+            df -h
             
             # Docker 설치
             if ! command -v docker &> /dev/null; then
