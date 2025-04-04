@@ -2,14 +2,14 @@ version: '3.8'
 
 services:
   app_deploy_web:
-    image: anifarm_deploy_web
+    image: yooingyu/anifarm:latest
     container_name: anifarm_deploy_web
     ports:
       - "8000:8000"
     env_file:
       - .env
     volumes:
-      - .:/app
+      - .env:/app/.env:ro
     restart: always
     networks:
       - app-network
@@ -17,4 +17,4 @@ services:
 networks:
   app-network:
     name: app-network
-    driver: bridge 
+    driver: bridge

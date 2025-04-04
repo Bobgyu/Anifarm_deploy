@@ -33,9 +33,8 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
           ENV_FILE: ${{ secrets.ENV_FILE }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           # EC2에 접속하여 디스크 공간 확보
           ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
@@ -51,7 +50,7 @@ jobs:
             
             # 스왑 파일 생성 및 활성화
             if [ ! -f /swapfile ]; then
-              sudo fallocate -l 8G /swapfile
+              sudo fallocate -l 16G /swapfile
               sudo chmod 600 /swapfile
               sudo mkswap /swapfile
               sudo swapon /swapfile
@@ -73,42 +72,28 @@ jobs:
             # Docker 서비스 재시작
             sudo systemctl start docker
             
-            # 디스크 공간 확인
-            df -h
-            free -h
-          '
-
-          # 애플리케이션 코드 전송
-          scp -i ~/.ssh/id_rsa -o ConnectTimeout=10 -r . ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/app_deploy/
-
-          # EC2에서 Docker 이미지 빌드 및 실행
-          ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
-            cd ~/app_deploy
-            
-            # 환경 변수 파일 생성
-            echo "$ENV_FILE" > .env
-            sudo chown ubuntu:ubuntu .env
+            # Docker Hub 로그인
+            echo "$DOCKERHUB_TOKEN" | sudo docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             
             # 기존 컨테이너와 이미지 정리
             sudo docker stop $(sudo docker ps -aq) 2>/dev/null || true
             sudo docker rm $(sudo docker ps -aq) 2>/dev/null || true
-            sudo docker rmi anifarm_deploy_web 2>/dev/null || true
+            sudo docker rmi yooingyu/anifarm:latest 2>/dev/null || true
             
-            # Docker 이미지 빌드
-            sudo docker build --no-cache -t anifarm_deploy_web .
+            # Docker 이미지 가져오기
+            sudo docker pull yooingyu/anifarm:latest
+            
+            # 환경 변수 파일 생성
+            echo "$ENV_FILE" > .env
+            sudo chown ubuntu:ubuntu .env
             
             # 컨테이너 실행
             sudo docker run -d \
               --name anifarm_deploy_web \
               -p 8000:8000 \
               -v $(pwd)/.env:/app/.env \
-              anifarm_deploy_web
+              yooingyu/anifarm:latest
             
             # 컨테이너 로그 확인
             sudo docker logs anifarm_deploy_web
           '
-
-
-
-
-
