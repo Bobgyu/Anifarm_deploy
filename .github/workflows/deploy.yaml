@@ -199,5 +199,7 @@ jobs:
             sudo docker port back-web-1 && \
             echo "Checking network connections..." && \
             sudo netstat -tulpn | grep 8000 && \
+            echo "Testing application connectivity..." && \
+            curl -v http://localhost:8000/ && \
             df -h
           '
