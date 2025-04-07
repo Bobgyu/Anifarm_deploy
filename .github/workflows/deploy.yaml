@@ -115,6 +115,9 @@ jobs:
           INFOMATION_API_KEY: ${{ secrets.INFOMATION_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
         run: |
           # EC2에 접속하여 Docker 설치 및 설정
           ssh -i ~/.ssh/id_rsa -o ConnectTimeout=30 -o ServerAliveInterval=60 -o ServerAliveCountMax=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
@@ -184,9 +187,42 @@ jobs:
             cd ~/app_deploy/back
             
             # 환경 변수 파일 생성 및 권한 설정
-            echo "$ENV_FILE" > .env
+            echo "Creating .env file..."
+            echo "DB_HOST=${DB_HOST}" > .env
+            echo "DB_USER=${DB_USER}" >> .env
+            echo "DB_PASS=${DB_PASS}" >> .env
+            echo "DB_NAME=${DB_NAME}" >> .env
+            echo "DB_PORT=${DB_PORT}" >> .env
+            echo "JWT_SECRET=${JWT_SECRET}" >> .env
+            echo "EMAIL=${EMAIL}" >> .env
+            echo "EMAIL_PASSWORD=${EMAIL_PASSWORD}" >> .env
+            echo "WEATHER_API_KEY=${WEATHER_API_KEY}" >> .env
+            echo "KMA_API_KEY=${KMA_API_KEY}" >> .env
+            echo "KAMIS_API_KEY=${KAMIS_API_KEY}" >> .env
+            echo "DATAENCODING_API_KEY=${DATAENCODING_API_KEY}" >> .env
+            echo "DATADECODING_API_KEY=${DATADECODING_API_KEY}" >> .env
+            echo "YOUTUBE_API_KEY=${YOUTUBE_API_KEY}" >> .env
+            echo "NAVER_CLIENT_ID=${NAVER_CLIENT_ID}" >> .env
+            echo "NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET}" >> .env
+            echo "MAIL_USERNAME=${MAIL_USERNAME}" >> .env
+            echo "MAIL_PASSWORD=${MAIL_PASSWORD}" >> .env
+            echo "MAIL_FROM=${MAIL_FROM}" >> .env
+            echo "MAIL_PORT=${MAIL_PORT}" >> .env
+            echo "MAIL_SERVER=${MAIL_SERVER}" >> .env
+            echo "YOUNG_API_KEY=${YOUNG_API_KEY}" >> .env
+            echo "INFOMATION_API_KEY=${INFOMATION_API_KEY}" >> .env
+            echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> .env
+            echo "TAVILY_API_KEY=${TAVILY_API_KEY}" >> .env
+            echo "AWS_ACCESS_KEY=${AWS_ACCESS_KEY}" >> .env
+            echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" >> .env
+            echo "AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}" >> .env
+            
             chown ubuntu:ubuntu .env
             chmod 600 .env
+            
+            # 환경 변수 파일 내용 확인
+            echo "Environment file content:"
+            cat .env
             
             # Docker 이미지 가져오기
             docker pull --platform linux/amd64 yooingyu/anifarm:latest
