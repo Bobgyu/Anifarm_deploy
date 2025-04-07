@@ -21,20 +21,33 @@ jobs:
       - name: Store SSH key
         run: |
           echo "Storing SSH key..."
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          # Windows 줄바꿈 문자 제거
-          sed -i 's/\r$//' ~/.ssh/id_rsa
+          # SSH 키 저장 전 디렉토리 확인
+          ls -la ~/.ssh/
+          
+          # SSH 키 저장 (base64 디코딩 후 저장)
+          echo "${{ secrets.EC2_SSH_KEY }}" | base64 -d > ~/.ssh/id_rsa
+          
+          # 키 파일 권한 설정
           chmod 600 ~/.ssh/id_rsa
           echo "SSH key stored with permissions 600"
+          
+          # 키 파일 내용 확인
           echo "Checking SSH key format..."
           head -n 1 ~/.ssh/id_rsa
           echo "First line of SSH key printed"
+          
+          # 키 파일 유효성 검사
+          echo "Validating SSH key..."
+          ssh-keygen -l -f ~/.ssh/id_rsa
+          
+          # known_hosts 설정
           echo "Adding host to known_hosts..."
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
           echo "Known hosts updated"
-          echo "Testing SSH key..."
-          ssh-keygen -l -f ~/.ssh/id_rsa
+          
+          # 최종 디렉토리 상태 확인
+          ls -la ~/.ssh/
 
       - name: Test SSH connection
         run: |
