@@ -45,7 +45,7 @@ jobs:
           fi
           echo "All required secrets are set"
 
-      - name: Deploy to server
+      - name: Setup Environment
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -53,14 +53,22 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            echo "Starting deployment..."
-            echo "Current directory: $(pwd)"
             echo "Creating deployment directory..."
             mkdir -p /home/ubuntu/anifarm_deploy/back
             cd /home/ubuntu/anifarm_deploy/back
             echo "Creating .env file..."
             echo "${{ secrets.ENV_FILE }}" > .env
             chmod 600 .env
+
+      - name: Create Docker Compose
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            cd /home/ubuntu/anifarm_deploy/back
             echo "Creating docker-compose.yml file..."
             cat > docker-compose.yml << 'EOL'
             version: '3.8'
@@ -100,8 +108,28 @@ jobs:
             volumes:
               postgres_data:
             EOL
+
+      - name: Stop Containers
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            cd /home/ubuntu/anifarm_deploy/back
             echo "Stopping existing containers..."
             docker-compose down || true
+
+      - name: Pull and Start Containers
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            cd /home/ubuntu/anifarm_deploy/back
             echo "Pulling latest image..."
             docker-compose pull
             echo "Starting containers..."
