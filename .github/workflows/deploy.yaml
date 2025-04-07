@@ -191,6 +191,13 @@ jobs:
             sudo docker network prune -f && \
             sudo docker-compose -f docker-compose.yml up -d && \
             sleep 10 && \
+            echo "Checking container status..." && \
+            sudo docker ps && \
+            echo "Checking container logs..." && \
             sudo docker logs back-web-1 && \
+            echo "Checking port bindings..." && \
+            sudo docker port back-web-1 && \
+            echo "Checking network connections..." && \
+            sudo netstat -tulpn | grep 8000 && \
             df -h
           '
