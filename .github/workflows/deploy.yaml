@@ -200,7 +200,7 @@ jobs:
             sudo docker-compose down || true && \
             sudo docker network prune -f && \
             sudo docker-compose -f docker-compose.yml up -d && \
-            sleep 10 && \
+            sleep 20 && \
             # 컨테이너 상태 확인
             echo "Checking container status..." && \
             sudo docker ps && \
@@ -211,6 +211,13 @@ jobs:
             echo "Checking network connections..." && \
             sudo netstat -tulpn | grep 8000 && \
             echo "Testing application connectivity..." && \
-            curl -v http://localhost:8000/ && \
+            for i in {1..5}; do
+              echo "Attempt $i to connect to the application..."
+              if curl -v http://localhost:8000/; then
+                echo "Application is responding successfully"
+                break
+              fi
+              sleep 5
+            done && \
             df -h
           '
