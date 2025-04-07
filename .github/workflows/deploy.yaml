@@ -188,7 +188,9 @@ jobs:
             cat .env && \
             sudo docker pull --platform linux/amd64 yooingyu/anifarm:latest && \
             sudo docker-compose down || true && \
+            sudo docker network prune -f && \
             sudo docker-compose -f docker-compose.yml up -d && \
-            sudo docker logs anifarm_deploy_web && \
+            sleep 10 && \
+            sudo docker logs back-web-1 && \
             df -h
           '
