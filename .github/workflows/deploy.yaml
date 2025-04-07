@@ -24,11 +24,8 @@ jobs:
           # SSH 키 저장 전 디렉토리 확인
           ls -la ~/.ssh/
           
-          # SSH 키 저장
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          
-          # Windows 줄바꿈 문자 제거
-          sed -i 's/\r$//' ~/.ssh/id_rsa
+          # SSH 키 저장 (Windows 경로 대신 실제 키 내용을 사용)
+          echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
           
           # 키 파일 권한 설정
           chmod 600 ~/.ssh/id_rsa
@@ -52,11 +49,7 @@ jobs:
           
           # 호스트 연결 테스트
           echo "Testing host connectivity..."
-          ping -c 4 ${{ secrets.EC2_HOST }}
-          
-          # 포트 확인
-          echo "Checking SSH port..."
-          nc -zv ${{ secrets.EC2_HOST }} 22
+          nc -zv -w 5 ${{ secrets.EC2_HOST }} 22
           
           # SSH 키스캔 시도
           echo "Attempting SSH keyscan..."
@@ -81,9 +74,9 @@ jobs:
           if [ $? -ne 0 ]; then
             echo "SSH connection failed"
             echo "Checking network connectivity..."
-            ping -c 4 ${{ secrets.EC2_HOST }}
+            nc -zv -w 5 ${{ secrets.EC2_HOST }} 22
             echo "Checking SSH service..."
-            nc -zv ${{ secrets.EC2_HOST }} 22
+            nc -zv -w 5 ${{ secrets.EC2_HOST }} 22
             echo "Checking SSH key permissions..."
             ls -la ~/.ssh/
             echo "Checking known_hosts content..."
