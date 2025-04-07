@@ -49,7 +49,20 @@ jobs:
           touch ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
           echo "Host: ${{ secrets.EC2_HOST }}"
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          
+          # 호스트 연결 테스트
+          echo "Testing host connectivity..."
+          ping -c 4 ${{ secrets.EC2_HOST }}
+          
+          # 포트 확인
+          echo "Checking SSH port..."
+          nc -zv ${{ secrets.EC2_HOST }} 22
+          
+          # SSH 키스캔 시도
+          echo "Attempting SSH keyscan..."
+          ssh-keyscan -v -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          
+          # known_hosts 파일 확인
           echo "Known hosts content:"
           cat ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
@@ -71,6 +84,10 @@ jobs:
             ping -c 4 ${{ secrets.EC2_HOST }}
             echo "Checking SSH service..."
             nc -zv ${{ secrets.EC2_HOST }} 22
+            echo "Checking SSH key permissions..."
+            ls -la ~/.ssh/
+            echo "Checking known_hosts content..."
+            cat ~/.ssh/known_hosts
           fi
 
       - name: Deploy to EC2
