@@ -30,6 +30,7 @@ RUN apt-get update && apt-get install -y \
 COPY --from=builder /app/wheels /wheels
 COPY --from=builder /app/requirements.txt .
 RUN pip install --no-cache-dir /wheels/* && \
+    pip install python-dotenv && \
     rm -rf /wheels
 
 # 필요한 디렉토리 구조 생성

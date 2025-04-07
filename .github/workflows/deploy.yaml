@@ -1,206 +1,43 @@
-name: Deploy to EC2 with Docker
+name: Deploy Backend
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Create SSH directory
-        run: |
-          mkdir -p ~/.ssh/
-          chmod 700 ~/.ssh/
-          echo "SSH directory created"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Store SSH key
-        run: |
-          echo "Storing SSH key..."
-          # SSH 키 저장 전 디렉토리 확인
-          ls -la ~/.ssh/
-          
-          # SSH 키 저장 (Windows 경로 대신 실제 키 내용을 사용)
-          echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
-          
-          # 키 파일 권한 설정
-          chmod 600 ~/.ssh/id_rsa
-          echo "SSH key stored with permissions 600"
-          
-          # 키 파일 내용 확인
-          echo "Checking SSH key format..."
-          head -n 1 ~/.ssh/id_rsa
-          echo "First line of SSH key printed"
-          
-          # 키 파일 유효성 검사
-          echo "Validating SSH key..."
-          ssh-keygen -l -f ~/.ssh/id_rsa
-          
-          # known_hosts 설정
-          echo "Adding host to known_hosts..."
-          mkdir -p ~/.ssh
-          touch ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
-          echo "Host: ${{ secrets.EC2_HOST }}"
-          
-          # 호스트 연결 테스트
-          echo "Testing host connectivity..."
-          nc -zv -w 5 ${{ secrets.EC2_HOST }} 22
-          
-          # SSH 키스캔 시도
-          echo "Attempting SSH keyscan..."
-          ssh-keyscan -v -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-          
-          # known_hosts 파일 확인
-          echo "Known hosts content:"
-          cat ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-          echo "Known hosts updated"
-          
-          # 최종 디렉토리 상태 확인
-          ls -la ~/.ssh/
-          
-          # SSH 연결 테스트
-          echo "Testing SSH connection..."
-          echo "Host: ${{ secrets.EC2_HOST }}"
-          echo "Username: ${{ secrets.EC2_USERNAME }}"
-          ssh -v -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=60 -o ServerAliveCountMax=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} 'echo "SSH connection successful"'
-          
-          # 연결 실패 시 추가 정보 출력
-          if [ $? -ne 0 ]; then
-            echo "SSH connection failed"
-            echo "Checking network connectivity..."
-            nc -zv -w 5 ${{ secrets.EC2_HOST }} 22
-            echo "Checking SSH service..."
-            nc -zv -w 5 ${{ secrets.EC2_HOST }} 22
-            echo "Checking SSH key permissions..."
-            ls -la ~/.ssh/
-            echo "Checking known_hosts content..."
-            cat ~/.ssh/known_hosts
-          fi
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Deploy to EC2
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
-          ENV_FILE: ${{ secrets.ENV_FILE }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASS: ${{ secrets.DB_PASS }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          EMAIL: ${{ secrets.EMAIL }}
-          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-          WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
-          KMA_API_KEY: ${{ secrets.KMA_API_KEY }}
-          KAMIS_API_KEY: ${{ secrets.KAMIS_API_KEY }}
-          DATAENCODING_API_KEY: ${{ secrets.DATAENCODING_API_KEY }}
-          DATADECODING_API_KEY: ${{ secrets.DATADECODING_API_KEY }}
-          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
-          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
-          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
-          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
-          MAIL_FROM: ${{ secrets.MAIL_FROM }}
-          MAIL_PORT: ${{ secrets.MAIL_PORT }}
-          MAIL_SERVER: ${{ secrets.MAIL_SERVER }}
-          YOUNG_API_KEY: ${{ secrets.YOUNG_API_KEY }}
-          INFOMATION_API_KEY: ${{ secrets.INFOMATION_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
-          AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-        run: |
-          # EC2에 접속하여 Docker 설치 및 설정
-          ssh -i ~/.ssh/id_rsa -o ConnectTimeout=30 -o ServerAliveInterval=60 -o ServerAliveCountMax=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} '
-            # Docker 설치
-            sudo apt-get update
-            sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-            sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-            sudo apt-get update
-            sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-            
-            # Docker Compose 설치
-            sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-            sudo chmod +x /usr/local/bin/docker-compose
-            
-            # Docker 서비스 시작 및 자동 시작 설정
-            sudo systemctl start docker
-            sudo systemctl enable docker
-            
-            # Docker 서비스 상태 확인
-            sudo systemctl status docker
-            
-            # Docker 데몬이 실행될 때까지 대기
-            for i in {1..30}; do
-              if sudo docker info >/dev/null 2>&1; then
-                echo "Docker daemon is running"
-                break
-              fi
-              echo "Waiting for Docker daemon to start... ($i/30)"
-              sleep 2
-            done
-            
-            # Docker Hub 로그인 및 환경 설정
-            echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin && \
-            cd ~/app_deploy/back && \
-            echo "Creating .env file..." && \
-            # 환경 변수 파일 생성
-            echo "DB_HOST=${{ secrets.DB_HOST }}" > .env && \
-            echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env && \
-            echo "DB_USER=${{ secrets.DB_USER }}" >> .env && \
-            echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env && \
-            echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env && \
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env && \
-            echo "EMAIL=${{ secrets.EMAIL }}" >> .env && \
-            echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> .env && \
-            echo "WEATHER_API_KEY=${{ secrets.WEATHER_API_KEY }}" >> .env && \
-            echo "KMA_API_KEY=${{ secrets.KMA_API_KEY }}" >> .env && \
-            echo "KAMIS_API_KEY=${{ secrets.KAMIS_API_KEY }}" >> .env && \
-            echo "DATAENCODING_API_KEY=${{ secrets.DATAENCODING_API_KEY }}" >> .env && \
-            echo "DATADECODING_API_KEY=${{ secrets.DATADECODING_API_KEY }}" >> .env && \
-            echo "YOUTUBE_API_KEY=${{ secrets.YOUTUBE_API_KEY }}" >> .env && \
-            echo "NAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }}" >> .env && \
-            echo "NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}" >> .env && \
-            echo "MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}" >> .env && \
-            echo "MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}" >> .env && \
-            echo "MAIL_FROM=${{ secrets.MAIL_FROM }}" >> .env && \
-            echo "MAIL_PORT=${{ secrets.MAIL_PORT }}" >> .env && \
-            echo "MAIL_SERVER=${{ secrets.MAIL_SERVER }}" >> .env && \
-            echo "YOUNG_API_KEY=${{ secrets.YOUNG_API_KEY }}" >> .env && \
-            echo "INFOMATION_API_KEY=${{ secrets.INFOMATION_API_KEY }}" >> .env && \
-            echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env && \
-            echo "TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }}" >> .env && \
-            echo "AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }}" >> .env && \
-            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env && \
-            echo "AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}" >> .env && \
-            # 파일 권한 설정 및 환경 변수 export
-            sudo chown ubuntu:ubuntu .env && sudo chmod 600 .env && \
-            echo "Environment file content:" && cat .env && \
-            echo "Exporting environment variables..." && \
-            set -a && source .env && set +a && \
-            # Docker 컨테이너 실행
-            sudo docker pull --platform linux/amd64 yooingyu/anifarm:latest && \
-            sudo docker-compose down || true && \
-            sudo docker network prune -f && \
-            # 환경 변수를 직접 전달하여 컨테이너 실행
-            sudo DB_HOST=$DB_HOST DB_PORT=$DB_PORT DB_USER=$DB_USER DB_PASS=$DB_PASS DB_NAME=$DB_NAME JWT_SECRET=$JWT_SECRET EMAIL=$EMAIL EMAIL_PASSWORD=$EMAIL_PASSWORD WEATHER_API_KEY=$WEATHER_API_KEY KMA_API_KEY=$KMA_API_KEY KAMIS_API_KEY=$KAMIS_API_KEY DATAENCODING_API_KEY=$DATAENCODING_API_KEY DATADECODING_API_KEY=$DATADECODING_API_KEY YOUTUBE_API_KEY=$YOUTUBE_API_KEY NAVER_CLIENT_ID=$NAVER_CLIENT_ID NAVER_CLIENT_SECRET=$NAVER_CLIENT_SECRET MAIL_USERNAME=$MAIL_USERNAME MAIL_PASSWORD=$MAIL_PASSWORD MAIL_FROM=$MAIL_FROM MAIL_PORT=$MAIL_PORT MAIL_SERVER=$MAIL_SERVER YOUNG_API_KEY=$YOUNG_API_KEY INFOMATION_API_KEY=$INFOMATION_API_KEY OPENAI_API_KEY=$OPENAI_API_KEY TAVILY_API_KEY=$TAVILY_API_KEY AWS_ACCESS_KEY=$AWS_ACCESS_KEY AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION docker-compose -f docker-compose.yml up -d && \
-            sleep 30 && \
-            # 컨테이너 상태 확인
-            echo "Checking container status..." && sudo docker ps && \
-            echo "Checking container logs..." && sudo docker logs back-web-1 && \
-            echo "Checking port bindings..." && sudo docker port back-web-1 && \
-            echo "Checking network connections..." && sudo netstat -tulpn | grep 8000 && \
-            echo "Testing application connectivity..." && \
-            for i in {1..10}; do echo "Attempt $i to connect to the application..." && if curl -v http://localhost:8000/; then echo "Application is responding successfully" && break; fi && sleep 10; done && \
-            df -h
-          '
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: yooingyu/anifarm:latest
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/anifarm_deploy/back
+            echo "${{ secrets.ENV_FILE }}" > .env
+            chmod 600 .env
+            docker-compose down
+            docker-compose pull
+            docker-compose up -d
