@@ -28,7 +28,6 @@ import sys
 import random
 from youtube import youtube_router
 from chatbot import process_query, ChatMessage, ChatRequest, ChatCandidate, ChatResponse
-from Crawler.crawler_endpoint import router as crawler_router
 from image_classifier import classifier, ImageClassificationResponse
 from PIL import Image
 import io
@@ -1311,8 +1310,6 @@ async def chat_endpoint(request: ChatRequest):
 # 대화 기록 초기화
 app.state.conversation_history = []
 
-# Crawler 라우터 포함
-app.include_router(crawler_router, prefix="/api/crawler")
 
 @app.get("/predictions/{crop}/{city}")
 async def get_predictions(crop: str, city: str):
