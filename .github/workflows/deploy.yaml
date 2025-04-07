@@ -45,17 +45,33 @@ jobs:
           
           # known_hosts 설정
           echo "Adding host to known_hosts..."
+          mkdir -p ~/.ssh
+          touch ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          echo "Host: ${{ secrets.EC2_HOST }}"
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          echo "Known hosts content:"
+          cat ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
           echo "Known hosts updated"
           
           # 최종 디렉토리 상태 확인
           ls -la ~/.ssh/
-
-      - name: Test SSH connection
-        run: |
-          echo "Testing SSH connection to ${{ secrets.EC2_HOST }}"
+          
+          # SSH 연결 테스트
+          echo "Testing SSH connection..."
+          echo "Host: ${{ secrets.EC2_HOST }}"
+          echo "Username: ${{ secrets.EC2_USERNAME }}"
           ssh -v -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=60 -o ServerAliveCountMax=10 ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} 'echo "SSH connection successful"'
+          
+          # 연결 실패 시 추가 정보 출력
+          if [ $? -ne 0 ]; then
+            echo "SSH connection failed"
+            echo "Checking network connectivity..."
+            ping -c 4 ${{ secrets.EC2_HOST }}
+            echo "Checking SSH service..."
+            nc -zv ${{ secrets.EC2_HOST }} 22
+          fi
 
       - name: Deploy to EC2
         env:
