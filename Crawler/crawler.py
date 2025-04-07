@@ -25,23 +25,6 @@ headers = {
                'application/signed-exchange;v=b3;q=0.7')
 }
 
-stock_url = 'https://www.nongmin.com/economyMain'
-res = requests.get(stock_url)
-html = res.text # 응답에서 html 문서만 가져오기
-
-# print(html)
-
-# Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
-# text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
-
-# 헤더를 담아서 요청
-res = requests.get(stock_url, headers=headers)
-html = res.text
-
-# res.text 를 뷰티풀수프에 전달하여 html.parser로 파싱
-soup = BeautifulSoup(html, 'html.parser')
-print(soup.find_all('tr'))
-
 # 동기 뉴스 링크 스크레이핑 함수
 def scrape_news_links(url: str = 'https://www.nongmin.com/list/19', pages: int = 1):
     headers = {
