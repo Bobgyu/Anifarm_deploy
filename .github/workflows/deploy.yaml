@@ -24,8 +24,11 @@ jobs:
           # SSH 키 저장 전 디렉토리 확인
           ls -la ~/.ssh/
           
-          # SSH 키 저장 (base64 디코딩 후 저장)
-          echo "${{ secrets.EC2_SSH_KEY }}" | base64 -d > ~/.ssh/id_rsa
+          # SSH 키 저장
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          
+          # Windows 줄바꿈 문자 제거
+          sed -i 's/\r$//' ~/.ssh/id_rsa
           
           # 키 파일 권한 설정
           chmod 600 ~/.ssh/id_rsa
