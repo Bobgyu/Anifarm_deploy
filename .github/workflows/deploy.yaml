@@ -150,13 +150,9 @@ jobs:
               sleep 2
             done
             
-            # Docker Hub 로그인
-            echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-            
-            # 작업 디렉토리로 이동
-            cd ~/app_deploy/back
-            
-            # 환경 변수 파일 생성 및 권한 설정
+            # Docker Hub 로그인 및 환경 설정
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin && \
+            cd ~/app_deploy/back && \
             echo "Creating .env file..." && \
             echo "DB_HOST=${{ secrets.DB_HOST }}" > .env && \
             echo "DB_USER=${{ secrets.DB_USER }}" >> .env && \
@@ -191,6 +187,7 @@ jobs:
             echo "Environment file content:" && \
             cat .env && \
             sudo docker pull --platform linux/amd64 yooingyu/anifarm:latest && \
+            sudo docker-compose down || true && \
             sudo docker-compose -f docker-compose.yml up -d && \
             sudo docker logs anifarm_deploy_web && \
             df -h
