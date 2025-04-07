@@ -180,29 +180,29 @@ jobs:
             sudo systemctl start docker
             
             # Docker Hub 로그인
-            echo "$DOCKERHUB_TOKEN" | sudo docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             
             # 기존 컨테이너와 이미지 정리
-            sudo docker stop $(sudo docker ps -aq) 2>/dev/null || true
-            sudo docker rm $(sudo docker ps -aq) 2>/dev/null || true
-            sudo docker rmi yooingyu/anifarm:latest 2>/dev/null || true
+            docker stop $(docker ps -aq) 2>/dev/null || true
+            docker rm $(docker ps -aq) 2>/dev/null || true
+            docker rmi yooingyu/anifarm:latest 2>/dev/null || true
             
             # 작업 디렉토리로 이동
             cd ~/app_deploy/back
             
             # 환경 변수 파일 생성 및 권한 설정
             echo "$ENV_FILE" > .env
-            sudo chown ubuntu:ubuntu .env
-            sudo chmod 600 .env
+            chown ubuntu:ubuntu .env
+            chmod 600 .env
             
             # Docker 이미지 가져오기
-            sudo docker pull --platform linux/amd64 yooingyu/anifarm:latest
+            docker pull --platform linux/amd64 yooingyu/anifarm:latest
             
             # 컨테이너 실행
-            sudo docker-compose -f docker-compose.yml up -d
+            docker-compose -f docker-compose.yml up -d
             
             # 컨테이너 로그 확인
-            sudo docker logs anifarm_deploy_web
+            docker logs anifarm_deploy_web
             
             # 디스크 공간 확인
             df -h
