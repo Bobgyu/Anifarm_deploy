@@ -61,6 +61,45 @@ jobs:
             echo "Creating .env file..."
             echo "${{ secrets.ENV_FILE }}" > .env
             chmod 600 .env
+            echo "Creating docker-compose.yml file..."
+            cat > docker-compose.yml << 'EOL'
+            version: '3.8'
+
+            services:
+              web:
+                image: yooingyu/anifarm:latest
+                ports:
+                  - "8000:8000"
+                volumes:
+                  - ./.env:/app/.env
+                depends_on:
+                  - db
+                dns:
+                  - 8.8.8.8
+                  - 8.8.4.4
+                networks:
+                  - app-network
+
+              db:
+                image: postgres:15
+                ports:
+                  - "5432:5432"
+                environment:
+                  - POSTGRES_USER=${DB_USER}
+                  - POSTGRES_PASSWORD=${DB_PASS}
+                  - POSTGRES_DB=${DB_NAME}
+                volumes:
+                  - postgres_data:/var/lib/postgresql/data
+                networks:
+                  - app-network
+
+            networks:
+              app-network:
+                driver: bridge
+
+            volumes:
+              postgres_data:
+            EOL
             echo "Stopping existing containers..."
             docker-compose down || true
             echo "Pulling latest image..."
