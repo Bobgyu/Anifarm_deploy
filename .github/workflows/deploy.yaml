@@ -137,90 +137,61 @@ jobs:
             sudo systemctl start docker
             sudo systemctl enable docker
             
-            # 현재 사용자를 docker 그룹에 추가
-            sudo usermod -aG docker $USER
+            # Docker 서비스 상태 확인
+            sudo systemctl status docker
             
-            # 디스크 공간 확인
-            df -h
-            
-            # Docker 서비스 중지
-            sudo systemctl stop docker.socket || true
-            sudo systemctl stop docker || true
-            
-            # 실행 중인 모든 컨테이너 중지
-            sudo docker stop $(sudo docker ps -aq) 2>/dev/null || true
-            sudo docker rm $(sudo docker ps -aq) 2>/dev/null || true
-            
-            # Docker 관련 모든 데이터 정리
-            sudo docker system prune -a --volumes --force
-            
-            # Docker 디렉토리 삭제 및 재생성
-            sudo rm -rf /var/lib/docker
-            sudo mkdir -p /var/lib/docker
-            sudo chown -R root:root /var/lib/docker
-            sudo chmod -R 711 /var/lib/docker
-            
-            # Docker 서비스 재시작
-            sudo systemctl start docker
+            # Docker 데몬이 실행될 때까지 대기
+            for i in {1..30}; do
+              if sudo docker info >/dev/null 2>&1; then
+                echo "Docker daemon is running"
+                break
+              fi
+              echo "Waiting for Docker daemon to start... ($i/30)"
+              sleep 2
+            done
             
             # Docker Hub 로그인
-            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-            
-            # 기존 컨테이너와 이미지 정리
-            docker stop $(docker ps -aq) 2>/dev/null || true
-            docker rm $(docker ps -aq) 2>/dev/null || true
-            docker rmi yooingyu/anifarm:latest 2>/dev/null || true
+            echo "$DOCKERHUB_TOKEN" | sudo docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             
             # 작업 디렉토리로 이동
             cd ~/app_deploy/back
             
             # 환경 변수 파일 생성 및 권한 설정
-            echo "Creating .env file..."
-            echo "DB_HOST=${DB_HOST}" > .env
-            echo "DB_USER=${DB_USER}" >> .env
-            echo "DB_PASS=${DB_PASS}" >> .env
-            echo "DB_NAME=${DB_NAME}" >> .env
-            echo "DB_PORT=${DB_PORT}" >> .env
-            echo "JWT_SECRET=${JWT_SECRET}" >> .env
-            echo "EMAIL=${EMAIL}" >> .env
-            echo "EMAIL_PASSWORD=${EMAIL_PASSWORD}" >> .env
-            echo "WEATHER_API_KEY=${WEATHER_API_KEY}" >> .env
-            echo "KMA_API_KEY=${KMA_API_KEY}" >> .env
-            echo "KAMIS_API_KEY=${KAMIS_API_KEY}" >> .env
-            echo "DATAENCODING_API_KEY=${DATAENCODING_API_KEY}" >> .env
-            echo "DATADECODING_API_KEY=${DATADECODING_API_KEY}" >> .env
-            echo "YOUTUBE_API_KEY=${YOUTUBE_API_KEY}" >> .env
-            echo "NAVER_CLIENT_ID=${NAVER_CLIENT_ID}" >> .env
-            echo "NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET}" >> .env
-            echo "MAIL_USERNAME=${MAIL_USERNAME}" >> .env
-            echo "MAIL_PASSWORD=${MAIL_PASSWORD}" >> .env
-            echo "MAIL_FROM=${MAIL_FROM}" >> .env
-            echo "MAIL_PORT=${MAIL_PORT}" >> .env
-            echo "MAIL_SERVER=${MAIL_SERVER}" >> .env
-            echo "YOUNG_API_KEY=${YOUNG_API_KEY}" >> .env
-            echo "INFOMATION_API_KEY=${INFOMATION_API_KEY}" >> .env
-            echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> .env
-            echo "TAVILY_API_KEY=${TAVILY_API_KEY}" >> .env
-            echo "AWS_ACCESS_KEY=${AWS_ACCESS_KEY}" >> .env
-            echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" >> .env
-            echo "AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}" >> .env
-            
-            chown ubuntu:ubuntu .env
-            chmod 600 .env
-            
-            # 환경 변수 파일 내용 확인
-            echo "Environment file content:"
-            cat .env
-            
-            # Docker 이미지 가져오기
-            docker pull --platform linux/amd64 yooingyu/anifarm:latest
-            
-            # 컨테이너 실행
-            docker-compose -f docker-compose.yml up -d
-            
-            # 컨테이너 로그 확인
-            docker logs anifarm_deploy_web
-            
-            # 디스크 공간 확인
+            echo "Creating .env file..." && \
+            echo "DB_HOST=${DB_HOST}" > .env && \
+            echo "DB_USER=${DB_USER}" >> .env && \
+            echo "DB_PASS=${DB_PASS}" >> .env && \
+            echo "DB_NAME=${DB_NAME}" >> .env && \
+            echo "DB_PORT=${DB_PORT}" >> .env && \
+            echo "JWT_SECRET=${JWT_SECRET}" >> .env && \
+            echo "EMAIL=${EMAIL}" >> .env && \
+            echo "EMAIL_PASSWORD=${EMAIL_PASSWORD}" >> .env && \
+            echo "WEATHER_API_KEY=${WEATHER_API_KEY}" >> .env && \
+            echo "KMA_API_KEY=${KMA_API_KEY}" >> .env && \
+            echo "KAMIS_API_KEY=${KAMIS_API_KEY}" >> .env && \
+            echo "DATAENCODING_API_KEY=${DATAENCODING_API_KEY}" >> .env && \
+            echo "DATADECODING_API_KEY=${DATADECODING_API_KEY}" >> .env && \
+            echo "YOUTUBE_API_KEY=${YOUTUBE_API_KEY}" >> .env && \
+            echo "NAVER_CLIENT_ID=${NAVER_CLIENT_ID}" >> .env && \
+            echo "NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET}" >> .env && \
+            echo "MAIL_USERNAME=${MAIL_USERNAME}" >> .env && \
+            echo "MAIL_PASSWORD=${MAIL_PASSWORD}" >> .env && \
+            echo "MAIL_FROM=${MAIL_FROM}" >> .env && \
+            echo "MAIL_PORT=${MAIL_PORT}" >> .env && \
+            echo "MAIL_SERVER=${MAIL_SERVER}" >> .env && \
+            echo "YOUNG_API_KEY=${YOUNG_API_KEY}" >> .env && \
+            echo "INFOMATION_API_KEY=${INFOMATION_API_KEY}" >> .env && \
+            echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> .env && \
+            echo "TAVILY_API_KEY=${TAVILY_API_KEY}" >> .env && \
+            echo "AWS_ACCESS_KEY=${AWS_ACCESS_KEY}" >> .env && \
+            echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" >> .env && \
+            echo "AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}" >> .env && \
+            sudo chown ubuntu:ubuntu .env && \
+            sudo chmod 600 .env && \
+            echo "Environment file content:" && \
+            cat .env && \
+            sudo docker pull --platform linux/amd64 yooingyu/anifarm:latest && \
+            sudo docker-compose -f docker-compose.yml up -d && \
+            sudo docker logs anifarm_deploy_web && \
             df -h
           '
