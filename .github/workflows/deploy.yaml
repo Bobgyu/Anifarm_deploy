@@ -144,8 +144,12 @@ jobs:
             df -h
             
             # Docker 서비스 중지
-            sudo systemctl stop docker || true
             sudo systemctl stop docker.socket || true
+            sudo systemctl stop docker || true
+            
+            # 실행 중인 모든 컨테이너 중지
+            sudo docker stop $(sudo docker ps -aq) 2>/dev/null || true
+            sudo docker rm $(sudo docker ps -aq) 2>/dev/null || true
             
             # Docker 관련 모든 데이터 정리
             sudo docker system prune -a --volumes --force
@@ -155,22 +159,6 @@ jobs:
             sudo mkdir -p /var/lib/docker
             sudo chown -R root:root /var/lib/docker
             sudo chmod -R 711 /var/lib/docker
-            
-            # 스왑 파일 비활성화 및 제거
-            sudo swapoff /swapfile 2>/dev/null || true
-            sudo rm -f /swapfile
-            
-            # 시스템 정리
-            sudo apt-get clean
-            sudo apt-get autoremove -y
-            sudo rm -rf /var/lib/apt/lists/*
-            sudo rm -rf /var/cache/apt/archives/*
-            sudo rm -rf /var/cache/apt/lists/*
-            sudo rm -rf /var/tmp/*
-            sudo rm -rf /tmp/*
-            sudo rm -rf /var/log/*.gz
-            sudo rm -rf /var/log/journal/*
-            sudo rm -rf /var/cache/*
             
             # Docker 서비스 재시작
             sudo systemctl start docker
