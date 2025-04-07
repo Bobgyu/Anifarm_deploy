@@ -20,14 +20,21 @@ jobs:
 
       - name: Store SSH key
         run: |
+          echo "Storing SSH key..."
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          # Windows 줄바꿈 문자 제거
+          sed -i 's/\r$//' ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          echo "SSH key stored"
+          echo "SSH key stored with permissions 600"
+          echo "Checking SSH key format..."
+          head -n 1 ~/.ssh/id_rsa
+          echo "First line of SSH key printed"
+          echo "Adding host to known_hosts..."
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
           echo "Known hosts updated"
-          cat ~/.ssh/id_rsa | head -n 1
-          echo "First line of SSH key printed"
+          echo "Testing SSH key..."
+          ssh-keygen -l -f ~/.ssh/id_rsa
 
       - name: Test SSH connection
         run: |
