@@ -2,8 +2,7 @@ version: '3.8'
 
 services:
   web:
-    build: .                          # ✅ 현재 디렉토리의 Dockerfile을 사용하여 직접 빌드
-    image: yooingyu/anifarm:latest    # ✅ 빌드된 이미지를 이 이름으로 태깅
+    image: yooingyu/anifarm:latest    # ✅ 이미 빌드된 이미지 사용
     ports:
       - "8000:8000"
     volumes:
