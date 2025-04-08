@@ -8,6 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -91,14 +92,6 @@ jobs:
                   - 8.8.4.4
                 networks:
                   - app-network
-                deploy:
-                  resources:
-                    limits:
-                      cpus: '2'
-                      memory: 4G
-                    reservations:
-                      cpus: '1'
-                      memory: 2G
                 restart: unless-stopped
                 healthcheck:
                   test: ["CMD", "curl", "-f", "http://localhost:8000/"]
@@ -118,14 +111,6 @@ jobs:
                   - postgres_data:/var/lib/postgresql/data
                 networks:
                   - app-network
-                deploy:
-                  resources:
-                    limits:
-                      cpus: '1'
-                      memory: 2G
-                    reservations:
-                      cpus: '0.5'
-                      memory: 1G
                 restart: unless-stopped
 
             networks:
