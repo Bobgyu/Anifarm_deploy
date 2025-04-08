@@ -27,6 +27,10 @@ jobs:
           context: .
           push: true
           tags: yooingyu/anifarm:latest
+          build-args: |
+            MAX_WORKERS=1
+            WORKER_TIMEOUT=1800
+            WORKER_CONNECTIONS=1000
 
       - name: Debug Secrets
         run: |
@@ -87,6 +91,20 @@ jobs:
                   - 8.8.4.4
                 networks:
                   - app-network
+                deploy:
+                  resources:
+                    limits:
+                      cpus: '2'
+                      memory: 4G
+                    reservations:
+                      cpus: '1'
+                      memory: 2G
+                restart: unless-stopped
+                healthcheck:
+                  test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+                  interval: 30s
+                  timeout: 10s
+                  retries: 3
 
               db:
                 image: postgres:15
@@ -100,6 +118,15 @@ jobs:
                   - postgres_data:/var/lib/postgresql/data
                 networks:
                   - app-network
+                deploy:
+                  resources:
+                    limits:
+                      cpus: '1'
+                      memory: 2G
+                    reservations:
+                      cpus: '0.5'
+                      memory: 1G
+                restart: unless-stopped
 
             networks:
               app-network:

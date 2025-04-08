@@ -52,10 +52,13 @@ COPY . .
 ENV PYTHONUNBUFFERED=1 \
     TF_CPP_MIN_LOG_LEVEL=2 \
     TF_ENABLE_ONEDNN_OPTS=0 \
-    CUDA_VISIBLE_DEVICES=-1
+    CUDA_VISIBLE_DEVICES=-1 \
+    MAX_WORKERS=1 \
+    WORKER_TIMEOUT=1800 \
+    WORKER_CONNECTIONS=1000
 
 # 포트 설정
 EXPOSE 8000
 
 # 애플리케이션 실행
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "3"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--timeout", "1800", "--limit-concurrency", "1000"]

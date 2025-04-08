@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e  # 오류 발생시 스크립트 중단
 
+# 시스템 리소스 최적화
+echo "Optimizing system resources..."
+sudo sysctl -w vm.max_map_count=262144
+sudo sysctl -w net.core.somaxconn=65535
+sudo sysctl -w net.ipv4.tcp_max_syn_backlog=65535
+sudo sysctl -w net.ipv4.ip_local_port_range="1024 65535"
+
 # 디스크 공간 정리 강화
 echo "Cleaning up disk space..."
 sudo apt-get clean
@@ -97,6 +104,11 @@ server {
     listen 80;
     server_name _;
 
+    client_max_body_size 100M;
+    client_body_buffer_size 128k;
+    client_header_buffer_size 1k;
+    large_client_header_buffers 4 4k;
+
     location / {
         proxy_pass http://127.0.0.1:8000;
         proxy_http_version 1.1;
@@ -104,6 +116,11 @@ server {
         proxy_set_header Connection "upgrade";
         proxy_set_header Host \$host;
         proxy_cache_bypass \$http_upgrade;
+        proxy_buffering on;
+        proxy_buffer_size 128k;
+        proxy_buffers 4 256k;
+        proxy_busy_buffers_size 256k;
+        proxy_read_timeout 300;
     }
 }
 EOF'
@@ -137,7 +154,7 @@ sudo systemctl restart nginx
 # 애플리케이션 시작
 echo "Starting FastAPI application..."
 cd /var/www/back
-nohup /home/ubuntu/miniconda/envs/fastapi-env/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --workers 3 > /var/log/fastapi/uvicorn.log 2>&1 &
+nohup /home/ubuntu/miniconda/envs/fastapi-env/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --workers 1 --timeout 1800 --limit-concurrency 1000 > /var/log/fastapi/uvicorn.log 2>&1 &
 
 # 애플리케이션 시작 확인을 위한 대기
 sleep 5
