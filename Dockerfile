@@ -61,4 +61,4 @@ ENV PYTHONUNBUFFERED=1 \
 EXPOSE 8000
 
 # 애플리케이션 실행
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--timeout", "1800", "--limit-concurrency", "1000"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
