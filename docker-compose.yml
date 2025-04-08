@@ -14,14 +14,6 @@ services:
       - 8.8.4.4
     networks:
       - app-network
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 4G
-        reservations:
-          cpus: '1'
-          memory: 2G
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
@@ -41,14 +33,6 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - app-network
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 1G
     restart: unless-stopped
 
 networks:
