@@ -85,6 +85,7 @@ jobs:
                   - "8000:8000"
                 volumes:
                   - ./.env:/app/.env
+                  - ~/models:/app/models
                 depends_on:
                   - db
                 dns:
