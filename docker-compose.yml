@@ -2,11 +2,12 @@ version: '3.8'
 
 services:
   web:
-    image: yooingyu/anifarm:latest    # ✅ 이미 빌드된 이미지 사용
+    image: yooingyu/anifarm:latest
     ports:
       - "8000:8000"
     volumes:
       - ./.env:/app/.env
+      - ~/models:/app/models          # ✅ 모델 경로 마운트 추가!
     depends_on:
       - db
     dns:
