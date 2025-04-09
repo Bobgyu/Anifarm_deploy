@@ -4,10 +4,10 @@ services:
   web:
     image: yooingyu/anifarm:latest
     ports:
-      - "8000:8000"
+      - "8000:8000"  # 내부용 포트
     volumes:
       - ./.env:/app/.env
-      - ~/models:/app/models          # ✅ 모델 경로 마운트 추가!
+      - ~/models:/app/models
     depends_on:
       - db
     dns:
@@ -21,8 +21,20 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    mem_limit: 800m
-    memswap_limit: 2g
+
+  nginx:
+    image: nginx:stable
+    container_name: nginx_proxy
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./certs:/etc/nginx/ssl  # SSL 인증서 경로
+    ports:
+      - "443:443"  # 외부 HTTPS 요청 받기
+    depends_on:
+      - web
+    networks:
+      - app-network
+    restart: unless-stopped
 
   db:
     image: postgres:15

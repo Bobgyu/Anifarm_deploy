@@ -41,6 +41,7 @@ fi
 echo "Cleaning up old deployments..."
 sudo rm -rf /var/www/back
 
+# 디스크 사용량 확인
 echo "Current disk space usage:"
 df -h
 
@@ -57,13 +58,13 @@ fi
 export PATH="/home/ubuntu/miniconda/bin:$PATH"
 source /home/ubuntu/miniconda/bin/activate
 
+# 애플리케이션 디렉토리 준비
 echo "creating app folder"
 sudo mkdir -p /var/www/back
 
 echo "moving files to app folder"
 sudo cp -r * /var/www/back/
 
-# Navigate to the app directory and handle .env file
 cd /var/www/back/
 echo "Setting up .env file..."
 if [ -f env ]; then
@@ -75,7 +76,6 @@ elif [ -f .env ]; then
     echo ".env file already exists"
 fi
 
-# .env 파일 확인
 echo "Checking .env file..."
 if [ -f .env ]; then
     echo ".env file exists"
@@ -97,12 +97,18 @@ if ! command -v nginx > /dev/null; then
     sudo apt-get install -y nginx
 fi
 
-# Nginx 설정
-echo "Configuring Nginx..."
+# Nginx HTTPS 리버스 프록시 설정 추가
+echo "Configuring Nginx for HTTPS..."
+sudo mkdir -p /etc/nginx/ssl
+sudo cp -r ./certs/* /etc/nginx/ssl/
+
 sudo bash -c 'cat > /etc/nginx/sites-available/myapp <<EOF
 server {
-    listen 80;
-    server_name _;
+    listen 443 ssl;
+    server_name abc.mydomain.site;
+
+    ssl_certificate /etc/nginx/ssl/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/privkey.pem;
 
     client_max_body_size 100M;
     client_body_buffer_size 128k;
@@ -125,7 +131,6 @@ server {
 }
 EOF'
 
-# Nginx 설정 심볼릭 링크 생성
 sudo ln -sf /etc/nginx/sites-available/myapp /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 
@@ -156,19 +161,13 @@ echo "Starting FastAPI application..."
 cd /var/www/back
 nohup /home/ubuntu/miniconda/envs/fastapi-env/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --workers 1 --timeout 1800 --limit-concurrency 1000 > /var/log/fastapi/uvicorn.log 2>&1 &
 
-# 애플리케이션 시작 확인을 위한 대기
 sleep 5
 
-# 로그 확인
 echo "Recent application logs:"
 tail -n 20 /var/log/fastapi/uvicorn.log || true
 
 echo "Deployment completed successfully! 🚀"
 
-# 상태 확인
 echo "Checking service status..."
 ps aux | grep uvicorn
 sudo systemctl status nginx
-
-
-
