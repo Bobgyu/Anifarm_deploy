@@ -17,16 +17,9 @@ sudo rm -rf /tmp/*
 sudo rm -rf ~/.cache/pip
 sudo rm -rf /var/cache/pip
 sudo rm -rf /var/cache/apt
-sudo rm -rf /var/cache/apt/archives
 sudo rm -rf /var/cache/apt/archives/*
 sudo rm -rf /var/cache/apt/*.bin
 sudo rm -rf /var/cache/apt/partial/*
-sudo rm -rf /var/cache/apt/apt-file
-sudo rm -rf /var/cache/apt/apt-file/*
-sudo rm -rf /var/cache/apt/apt-file/partial/*
-sudo rm -rf /var/cache/apt/apt-file/archives/*
-sudo rm -rf /var/cache/apt/apt-file/archives/*/*
-sudo rm -rf /var/cache/apt/apt-file/archives/*/*/*
 
 # 기존 conda 환경 및 캐시 정리
 echo "Cleaning up conda environments..."
@@ -76,14 +69,6 @@ elif [ -f .env ]; then
     echo ".env file already exists"
 fi
 
-echo "Checking .env file..."
-if [ -f .env ]; then
-    echo ".env file exists"
-    ls -la .env
-else
-    echo "Warning: .env file not found"
-fi
-
 # 기존 환경 제거 및 새로운 환경 생성
 echo "Creating conda environment..."
 conda env remove -n fastapi-env --yes || true
@@ -105,7 +90,7 @@ sudo cp -r ./certs/* /etc/nginx/ssl/
 sudo bash -c 'cat > /etc/nginx/sites-available/myapp <<EOF
 server {
     listen 443 ssl;
-    server_name abc.mydomain.site;
+    server_name anifarmback.yoogyu.site;
 
     ssl_certificate /etc/nginx/ssl/fullchain.pem;
     ssl_certificate_key /etc/nginx/ssl/privkey.pem;
